@@ -22,11 +22,20 @@ export default function BottleEditModal({ bottle, locations, onClose }: BottleEd
 
   useEffect(() => {
     if (bottle) {
-      setLocationId(bottle.storage_location_id ?? undefined);
+      const savedLocation = localStorage.getItem('pb_last_location_id');
+      setLocationId(
+        bottle.storage_location_id ?? (savedLocation ? Number(savedLocation) : undefined)
+      );
       setStatus(bottle.status);
       setPrice(bottle.purchase_price != null ? String(bottle.purchase_price) : '');
     }
   }, [bottle]);
+
+  const handleLocationChange = (val: number | undefined) => {
+    setLocationId(val);
+    if (val != null) localStorage.setItem('pb_last_location_id', String(val));
+    else localStorage.removeItem('pb_last_location_id');
+  };
 
   if (!bottle) return null;
 
@@ -55,7 +64,7 @@ export default function BottleEditModal({ bottle, locations, onClose }: BottleEd
           <label className="block text-sm font-medium text-gray-700 mb-1">Location <HelpTip text="Where this physical bottle is stored (e.g., Bar Cart, Wine Cellar). Manage locations in Settings." /></label>
           <select
             value={locationId ?? ''}
-            onChange={(e) => setLocationId(e.target.value ? Number(e.target.value) : undefined)}
+            onChange={(e) => handleLocationChange(e.target.value ? Number(e.target.value) : undefined)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
           >
             <option value="">No location</option>

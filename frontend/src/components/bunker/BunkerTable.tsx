@@ -55,7 +55,11 @@ export default function BunkerTable({ items, showImages, onDelete }: BunkerTable
                 </div>
               </td>
               <td className="px-4 py-3 text-sm text-gray-600 hidden md:table-cell">{item.company_name || '--'}</td>
-              <td className="px-4 py-3 text-sm text-gray-600 hidden lg:table-cell capitalize">{item.spirit_type}</td>
+              <td className="px-4 py-3 text-sm text-gray-600 hidden lg:table-cell capitalize">
+                {item.spirit_subtype
+                  ? <>{item.spirit_subtype} <span className="text-gray-400 text-xs normal-case">({item.spirit_type})</span></>
+                  : item.spirit_type}
+              </td>
               <td className="px-4 py-3 text-sm text-gray-600 hidden sm:table-cell">{item.abv != null ? `${Number(item.abv).toFixed(3)}%` : '--'}</td>
               <td className="px-4 py-3"><StarRating rating={item.personal_rating} /></td>
               <td className="px-4 py-3 text-sm text-gray-900 font-medium">{item.bottle_count}</td>

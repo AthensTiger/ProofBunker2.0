@@ -500,8 +500,15 @@ export async function getAllProducts(req: Request, res: Response, next: NextFunc
     let idx = 1;
 
     if (q) {
-      conditions.push(`p.name ILIKE $${idx++}`);
-      params.push(`%${q}%`);
+      const qStr = (q as string).trim();
+      if (/^\d{8,14}$/.test(qStr)) {
+        // Looks like a barcode — search by UPC
+        conditions.push(`p.id IN (SELECT product_id FROM product_upcs WHERE upc = $${idx++})`);
+        params.push(qStr);
+      } else {
+        conditions.push(`p.name ILIKE $${idx++}`);
+        params.push(`%${qStr}%`);
+      }
     }
     if (spirit_type) {
       conditions.push(`p.spirit_type = $${idx++}`);

@@ -57,7 +57,12 @@ export async function getBunkerList(req: Request, res: Response, next: NextFunct
               p.name, p.slug, p.spirit_type, p.spirit_subtype, p.abv, p.proof,
               p.age_statement, p.approval_status,
               c.name AS company_name,
-              pi.cdn_url AS image_url,
+              COALESCE(pi.cdn_url, (
+                SELECT bp.cdn_url FROM bunker_bottles bb2
+                JOIN bunker_bottle_photos bp ON bp.bunker_bottle_id = bb2.id
+                WHERE bb2.bunker_item_id = bi.id
+                ORDER BY bp.display_order ASC, bp.id ASC LIMIT 1
+              )) AS image_url,
               COUNT(bb.id)::int AS bottle_count,
               ARRAY_REMOVE(ARRAY_AGG(DISTINCT usl.name), NULL) AS location_names,
               ARRAY_REMOVE(ARRAY_AGG(DISTINCT bb.status), NULL) AS statuses
@@ -92,7 +97,12 @@ export async function getBunkerItem(req: Request, res: Response, next: NextFunct
               p.description,
               c.name AS company_name,
               d.name AS distiller_name,
-              pi.cdn_url AS image_url
+              COALESCE(pi.cdn_url, (
+                SELECT bp.cdn_url FROM bunker_bottles bb2
+                JOIN bunker_bottle_photos bp ON bp.bunker_bottle_id = bb2.id
+                WHERE bb2.bunker_item_id = bi.id
+                ORDER BY bp.display_order ASC, bp.id ASC LIMIT 1
+              )) AS image_url
        FROM bunker_items bi
        JOIN products p ON p.id = bi.product_id
        LEFT JOIN companies c ON c.id = p.company_id
