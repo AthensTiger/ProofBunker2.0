@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.env
+backend/.env
+frontend/.env
+migration/.env
+scrapers/.env
+scrapers/venv/
+*.log
+.DS_Store
+.claude/

@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Serif font for menu titles */
+.font-serif {
+  font-family: Georgia, 'Times New Roman', Times, serif;
+}
+
+/* Menu page styling */
+.menu-page {
+  font-variant-ligatures: common-ligatures;
+}
+
+.menu-item + .menu-item {
+  padding-top: 0.25rem;
+}
+
+@media print {
+  @page {
+    margin: 0.5in 0.6in;
+    size: letter;
+  }
+
+  nav {
+    display: none !important;
+  }
+
+  body, #root, #root > * {
+    background: white !important;
+    min-height: auto !important;
+  }
+
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: none !important;
+  }
+
+  .menu-page {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+  }
+
+  .menu-page h1 {
+    font-size: 2rem;
+  }
+
+  .menu-item {
+    break-inside: avoid;
+  }
+}
