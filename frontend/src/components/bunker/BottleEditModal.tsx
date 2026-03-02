@@ -4,6 +4,7 @@ import type { StorageLocation } from '../../types/location';
 import { useUpdateBottle } from '../../hooks/useBunker';
 import { useUIStore } from '../../stores/uiStore';
 import Dialog from '../ui/Dialog';
+import HelpTip from '../ui/HelpTip';
 
 interface BottleEditModalProps {
   bottle: BunkerBottle | null;
@@ -51,7 +52,7 @@ export default function BottleEditModal({ bottle, locations, onClose }: BottleEd
     <Dialog open={!!bottle} onClose={onClose} title="Edit Bottle">
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Location <HelpTip text="Where this physical bottle is stored (e.g., Bar Cart, Wine Cellar). Manage locations in Settings." /></label>
           <select
             value={locationId ?? ''}
             onChange={(e) => setLocationId(e.target.value ? Number(e.target.value) : undefined)}
@@ -65,7 +66,7 @@ export default function BottleEditModal({ bottle, locations, onClose }: BottleEd
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Status <HelpTip text="Sealed = unopened bottle. Opened = bottle in use. Empty = finished — kept for recordkeeping." /></label>
           <div className="flex gap-2">
             <button
               type="button"
@@ -104,7 +105,7 @@ export default function BottleEditModal({ bottle, locations, onClose }: BottleEd
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Purchase Price ($)</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Purchase Price ($) <HelpTip text="What you actually paid for this bottle. Private — only visible to you unless you share with prices enabled." /></label>
           <input
             type="number"
             step="0.01"

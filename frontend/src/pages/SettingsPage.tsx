@@ -5,6 +5,7 @@ import { useLocations, useCreateLocation, useDeleteLocation } from '../hooks/use
 import { useMyShares, useCreateShare, useDeleteShare } from '../hooks/useShares';
 import { useUIStore } from '../stores/uiStore';
 import ExportDialog from '../components/export/ExportDialog';
+import HelpTip from '../components/ui/HelpTip';
 
 export default function SettingsPage() {
   const { logout } = useAuth0();
@@ -112,7 +113,7 @@ export default function SettingsPage() {
 
       {/* Locations */}
       <section className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Storage Locations</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Storage Locations <HelpTip text="Named spots where you physically keep bottles (e.g., 'Bar Cart', 'Basement Rack'). Create locations here, then assign bottles to them from the bunker view." position="right" /></h2>
         <div className="space-y-2 mb-4">
           {locations.map((loc) => (
             <div key={loc.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
@@ -149,7 +150,7 @@ export default function SettingsPage() {
 
       {/* Sharing */}
       <section className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Sharing</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Sharing <HelpTip text="Give other users read-only access to your bunker. Enter their email address — they'll see your collection when they log in. You control which details are visible." position="right" /></h2>
         <div className="space-y-2 mb-4">
           {shares.map((share) => (
             <div key={share.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">

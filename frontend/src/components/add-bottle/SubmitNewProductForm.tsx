@@ -5,6 +5,7 @@ import { useAutocomplete, useCompanyAutocomplete, useDistillerAutocomplete, useP
 import { useUIStore } from '../../stores/uiStore';
 import Combobox from '../ui/Combobox';
 import ResearchComparisonModal from '../ui/ResearchComparisonModal';
+import HelpTip from '../ui/HelpTip';
 
 const SPIRIT_TYPES = ['whiskey', 'tequila', 'rum', 'gin', 'vodka', 'cognac', 'brandy', 'mezcal', 'liqueur', 'other'];
 
@@ -269,7 +270,7 @@ export default function SubmitNewProductForm({ initialUpc, locations, onSubmit, 
           {!selectedProductId && (
             <>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Spirit Type *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Spirit Type * <HelpTip text="The primary category of spirit (e.g., Whiskey, Tequila, Rum). Required." /></label>
                 <select value={spiritType} onChange={(e) => { setSpiritType(e.target.value); setSpiritSubtype(''); }}
                   required className={`${inputCls} bg-white`}>
                   <option value="">Select type...</option>
@@ -280,7 +281,7 @@ export default function SubmitNewProductForm({ initialUpc, locations, onSubmit, 
               </div>
               {subtypes.length > 0 && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Subtype</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Subtype <HelpTip text="More specific style within the category (e.g., Bourbon, Single Malt, Reposado)." /></label>
                   <select value={spiritSubtype} onChange={(e) => setSpiritSubtype(e.target.value)} className={`${inputCls} bg-white`}>
                     <option value="">Select subtype...</option>
                     {subtypes.map((s) => (
@@ -335,27 +336,27 @@ export default function SubmitNewProductForm({ initialUpc, locations, onSubmit, 
           <legend className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Specifications</legend>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Proof</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Proof <HelpTip text="Alcohol strength = ABV × 2. A 45% ABV spirit is 90 proof. Enter one and the other auto-calculates." /></label>
               <input type="number" step="0.1" value={proof} onChange={(e) => setProof(e.target.value)} placeholder="e.g., 90" className={inputCls} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">ABV (%)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">ABV (%) <HelpTip text="Alcohol by volume as a percentage (e.g., 45.0 for a 45% spirit). Enter either Proof or ABV — the other will auto-fill." /></label>
               <input type="number" step="0.001" value={abv} onChange={(e) => setAbv(e.target.value)} placeholder="e.g., 45.000" className={inputCls} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Age Statement</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Age Statement <HelpTip text='Years aged as stated on the label (e.g., "12 Years"). Leave blank for NAS (No Age Statement) products.' /></label>
               <input type="text" value={ageStatement} onChange={(e) => setAgeStatement(e.target.value)} placeholder="e.g., 10 Years" className={inputCls} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Volume (ml)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Volume (ml) <HelpTip text="Bottle size in milliliters. Common sizes: 50ml (mini), 375ml (half), 750ml (standard), 1000ml, 1750ml (handle)." /></label>
               <input type="number" value={volumeMl} onChange={(e) => setVolumeMl(e.target.value)} placeholder="e.g., 750" className={inputCls} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Mash Bill</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Mash Bill <HelpTip text="The grain recipe used in fermentation (e.g., 75% corn, 21% rye, 4% malted barley). Required for bourbon and rye." /></label>
               <input type="text" value={mashBill} onChange={(e) => setMashBill(e.target.value)} placeholder="e.g., 75% corn, 13% rye" className={inputCls} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">MSRP ($)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">MSRP ($) <HelpTip text="Manufacturer's Suggested Retail Price in USD. Enter the standard retail price, not sale or secondary market prices." /></label>
               <input type="number" step="0.01" min="0" value={msrp} onChange={(e) => setMsrp(e.target.value)} placeholder="0.00" className={inputCls} />
             </div>
           </div>
@@ -373,19 +374,19 @@ export default function SubmitNewProductForm({ initialUpc, locations, onSubmit, 
           {showProduction && (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Barrel Type</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Barrel Type <HelpTip text="The type of cask used for primary aging (e.g., New Charred Oak, Ex-Bourbon, Sherry Butt, Virgin Oak)." /></label>
                 <input type="text" value={barrelType} onChange={(e) => setBarrelType(e.target.value)} placeholder="e.g., New charred oak" className={inputCls} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Barrel Char Level</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Barrel Char Level <HelpTip text="How deeply the inside of the oak barrel was charred before filling. #1 (light) to #4 (alligator char) is most common for bourbon." /></label>
                 <input type="text" value={barrelCharLevel} onChange={(e) => setBarrelCharLevel(e.target.value)} placeholder="e.g., #4 Char" className={inputCls} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Finish Type</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Finish Type <HelpTip text="A secondary cask used to add final flavor (e.g., Port, Sherry, Wine, Rum, Madeira). Leave blank if no finish." /></label>
                 <input type="text" value={finishType} onChange={(e) => setFinishType(e.target.value)} placeholder="e.g., Port Cask Finish" className={inputCls} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Distillation Method</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Distillation Method <HelpTip text="Equipment used to distill the spirit (e.g., Pot Still, Column Still, Double Pot). Pot stills produce heavier, more complex spirits." /></label>
                 <input type="text" value={distillationMethod} onChange={(e) => setDistillationMethod(e.target.value)} placeholder="e.g., Pot Still" className={inputCls} />
               </div>
               <div>

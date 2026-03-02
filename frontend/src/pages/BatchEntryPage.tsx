@@ -44,6 +44,7 @@ export default function BatchEntryPage() {
   if (lookupError && searchUpc) {
     addToast('error', `No product found for UPC: ${searchUpc}`);
     setSearchUpc('');
+    setUpcInput('');
   }
 
   const handleScan = (e: React.FormEvent) => {
