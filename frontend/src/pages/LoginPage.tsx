@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom';
 import LoadingScreen from '../components/layout/LoadingScreen';
 
 export default function LoginPage() {
-  const { loginWithRedirect, isAuthenticated, isLoading, error } = useAuth0();
+  const { loginWithRedirect, isAuthenticated, isLoading } = useAuth0();
 
   if (isLoading) return <LoadingScreen />;
   if (isAuthenticated) return <Navigate to="/bunker" replace />;
@@ -23,11 +23,6 @@ export default function LoginPage() {
         >
           Sign In
         </button>
-        {error && (
-          <p className="mt-6 text-red-300 text-sm bg-black/30 rounded px-4 py-2 max-w-sm mx-auto">
-            Auth error: {error.message}
-          </p>
-        )}
       </div>
     </div>
   );
