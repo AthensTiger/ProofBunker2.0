@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import type { BunkerItemDetail } from '../../types/bunker';
-import type { TastingNote } from '../../types/product';
+import type { TastingNote, ResearchResult } from '../../types/product';
 import type { UserRecord } from '../../types/user';
-import { useUpdateProduct, useUpsertTastingNote, useDeleteTastingNote } from '../../hooks/useProducts';
+import { useUpdateProduct, useUpsertTastingNote, useDeleteTastingNote, useResearchProduct } from '../../hooks/useProducts';
 import { useUIStore } from '../../stores/uiStore';
 import Badge from '../ui/Badge';
+import ResearchComparisonModal from '../ui/ResearchComparisonModal';
 
 interface ProductInfoSectionProps {
   item: BunkerItemDetail;
@@ -13,9 +14,64 @@ interface ProductInfoSectionProps {
 
 export default function ProductInfoSection({ item, user }: ProductInfoSectionProps) {
   const canEdit = user?.role === 'admin' || user?.role === 'curator';
+  const addToast = useUIStore((s) => s.addToast);
+  const updateProduct = useUpdateProduct();
+  const research = useResearchProduct();
+  const [researchResult, setResearchResult] = useState<ResearchResult | null>(null);
+
+  const handleResearch = () => {
+    research.mutate(item.name, {
+      onSuccess: (data: ResearchResult) => setResearchResult(data),
+      onError: (err: any) => addToast('error', err?.message || 'Research failed'),
+    });
+  };
+
+  const handleApplyResearch = (selected: Partial<ResearchResult>) => {
+    const updates: Record<string, unknown> = { productId: item.product_id };
+    if (selected.name != null) updates.name = selected.name;
+    if (selected.spirit_type != null) updates.spirit_type = selected.spirit_type;
+    if (selected.spirit_subtype != null) updates.spirit_subtype = selected.spirit_subtype;
+    if (selected.company_name != null) updates.company_name = selected.company_name;
+    if (selected.distiller_name != null) updates.distiller_name = selected.distiller_name;
+    if (selected.description != null) updates.description = selected.description;
+    if (selected.proof != null) updates.proof = selected.proof;
+    if (selected.abv != null) updates.abv = selected.abv;
+    if (selected.age_statement != null) updates.age_statement = selected.age_statement;
+    if (selected.volume_ml != null) updates.volume_ml = selected.volume_ml;
+    if (selected.mash_bill != null) updates.mash_bill = selected.mash_bill;
+    if (selected.msrp_usd != null) updates.msrp_usd = selected.msrp_usd;
+    if (selected.barrel_type != null) updates.barrel_type = selected.barrel_type;
+    if (selected.finish_type != null) updates.finish_type = selected.finish_type;
+    updateProduct.mutate(updates as any, {
+      onSuccess: () => { addToast('success', 'Product updated'); setResearchResult(null); },
+      onError: () => addToast('error', 'Failed to update product'),
+    });
+  };
 
   return (
     <div className="bg-white rounded-lg shadow p-6">
+      {canEdit && (
+        <div className="flex justify-end mb-3">
+          <button
+            type="button"
+            onClick={handleResearch}
+            disabled={research.isPending}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {research.isPending ? (
+              <>
+                <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                Researching...
+              </>
+            ) : (
+              <>
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
+                Research Product
+              </>
+            )}
+          </button>
+        </div>
+      )}
       <div className="flex gap-6">
         {item.image_url ? (
           <img
@@ -80,6 +136,22 @@ export default function ProductInfoSection({ item, user }: ProductInfoSectionPro
         notes={item.tasting_notes}
         canEdit={!!canEdit}
       />
+
+      {researchResult && (
+        <ResearchComparisonModal
+          result={researchResult}
+          currentValues={{
+            name: item.name, spirit_type: item.spirit_type, spirit_subtype: item.spirit_subtype,
+            company_name: item.company_name, distiller_name: item.distiller_name,
+            description: item.description, proof: item.proof, abv: item.abv,
+            age_statement: item.age_statement, volume_ml: item.volume_ml,
+            mash_bill: item.mash_bill, msrp_usd: item.msrp_usd,
+            barrel_type: item.barrel_type, finish_type: item.finish_type,
+          }}
+          onApply={(selected) => handleApplyResearch(selected)}
+          onClose={() => setResearchResult(null)}
+        />
+      )}
     </div>
   );
 }

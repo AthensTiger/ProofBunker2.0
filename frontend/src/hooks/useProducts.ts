@@ -42,7 +42,23 @@ export function useUpdateProduct() {
   const api = useApiClient();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ productId, ...body }: { productId: number; mash_bill?: string | null; description?: string | null }) =>
+    mutationFn: ({ productId, ...body }: {
+      productId: number;
+      name?: string | null;
+      spirit_type?: string | null;
+      spirit_subtype?: string | null;
+      company_name?: string | null;
+      distiller_name?: string | null;
+      description?: string | null;
+      proof?: number | null;
+      abv?: number | null;
+      age_statement?: string | null;
+      volume_ml?: number | null;
+      mash_bill?: string | null;
+      msrp_usd?: number | null;
+      barrel_type?: string | null;
+      finish_type?: string | null;
+    }) =>
       api.put(`/products/${productId}`, body),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bunker'] });
