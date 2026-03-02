@@ -5,6 +5,7 @@ import { useLocations } from '../hooks/useLocations';
 import { useUIStore } from '../stores/uiStore';
 import { useUpcLookup } from '../hooks/useProducts';
 import type { UpcLookupResult } from '../types/product';
+import BarcodeScannerModal from '../components/ui/BarcodeScannerModal';
 
 interface BatchEntry {
   id: string;
@@ -23,6 +24,7 @@ export default function BatchEntryPage() {
   const [entries, setEntries] = useState<BatchEntry[]>([]);
   const [locationId, setLocationId] = useState<number | undefined>();
   const [saving, setSaving] = useState(false);
+  const [scanning, setScanning] = useState(false);
 
   const { data: lookupResult, error: lookupError, isFetching } = useUpcLookup(searchUpc);
 
@@ -120,6 +122,17 @@ export default function BatchEntryPage() {
             maxLength={14}
           />
           <button
+            type="button"
+            onClick={() => setScanning(true)}
+            title="Scan with camera"
+            className="px-4 py-3 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+              <circle cx="12" cy="13" r="4"/>
+            </svg>
+          </button>
+          <button
             type="submit"
             disabled={upcInput.trim().length < 8 || isFetching}
             className="px-4 py-3 bg-amber-700 text-white rounded-lg text-sm font-medium hover:bg-amber-800 transition-colors disabled:opacity-50"
@@ -169,6 +182,17 @@ export default function BatchEntryPage() {
           {saving ? 'Saving...' : entries.length > 0 ? `Done (Add ${entries.length} bottles)` : 'Done'}
         </button>
       </div>
+
+      {scanning && (
+        <BarcodeScannerModal
+          onScan={(code) => {
+            setUpcInput(code);
+            setSearchUpc(code);
+            setScanning(false);
+          }}
+          onClose={() => setScanning(false)}
+        />
+      )}
     </div>
   );
 }
