@@ -7,6 +7,14 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* iOS Safari requires font-size >= 16px to show the keyboard on input focus.
+   Override Tailwind's text-sm (14px) on mobile for all form fields. */
+@media screen and (max-width: 639px) {
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+}
+
 /* Serif font for menu titles */
 .font-serif {
   font-family: Georgia, 'Times New Roman', Times, serif;
