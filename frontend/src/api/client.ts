@@ -23,7 +23,6 @@ export class ApiClient {
 
     if (!response.ok) {
       if (response.status === 401) {
-        window.location.reload();
         throw new ApiError(401, 'Session expired');
       }
       const body = await response.json().catch(() => ({ error: 'Request failed' }));
