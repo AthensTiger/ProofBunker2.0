@@ -12,9 +12,11 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-900 via-amber-800 to-amber-950 flex items-center justify-center">
       <div className="text-center">
-        <h1 className="text-5xl font-bold text-white mb-2 tracking-tight">
-          Proof Bunker
-        </h1>
+        <img
+          src="/logo.png"
+          alt="Proof Bunker"
+          className="w-64 h-64 object-contain mx-auto mb-6 drop-shadow-2xl"
+        />
         <p className="text-amber-200 text-lg mb-10">
           Your premium spirits collection, organized.
         </p>
