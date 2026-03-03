@@ -82,7 +82,7 @@ export default function BottlesTable({ bottles, locations, productId, productNam
   };
 
   const handleAddAnother = () => {
-    navigate('/add', { state: { productId, productName, returnTo: location.pathname } });
+    navigate('/add-bottle', { state: { productId, productName, returnTo: location.pathname } });
   };
 
   return (
