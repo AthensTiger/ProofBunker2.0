@@ -15,6 +15,7 @@ import SharedBunkerViewPage from './pages/SharedBunkerViewPage';
 import AdminPage from './pages/AdminPage';
 import SupportPage from './pages/SupportPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
+import MessagesPage from './pages/MessagesPage';
 
 const router = createBrowserRouter([
   {
@@ -34,6 +35,7 @@ const router = createBrowserRouter([
       { path: 'shared/:shareId', element: <SharedBunkerViewPage /> },
       { path: 'admin', element: <AdminPage /> },
       { path: 'support', element: <SupportPage /> },
+      { path: 'messages', element: <MessagesPage /> },
     ],
   },
   { path: '/login', element: <LoginPage /> },

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import jwtCheck from '../config/auth';
 import { ensureUserExists } from '../middleware/auth';
-import { getMe, updateMe, verifyAge, updatePreferences } from '../controllers/userController';
+import { getMe, updateMe, verifyAge, updatePreferences, getContacts } from '../controllers/userController';
 import '../types';
 
 const router = Router();
@@ -13,5 +13,6 @@ router.get('/me', getMe);
 router.put('/me', updateMe);
 router.put('/me/verify-age', verifyAge);
 router.put('/me/preferences', updatePreferences);
+router.get('/contacts', getContacts);
 
 export default router;

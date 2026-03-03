@@ -17,6 +17,8 @@ import exportRoutes from './routes/exports';
 import adminRoutes from './routes/admin';
 import researchRoutes from './routes/research';
 import supportRoutes from './routes/support';
+import messagesRoutes from './routes/messages';
+import notificationsRoutes from './routes/notifications';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -53,6 +55,8 @@ app.use('/api/v1/export', exportRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/research', researchRoutes);
 app.use('/api/v1/support', supportRoutes);
+app.use('/api/v1/messages', messagesRoutes);
+app.use('/api/v1/notifications', notificationsRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);
