@@ -96,11 +96,38 @@ export async function getBunkerItem(req: Request, res: Response, next: NextFunct
     const { id } = req.params;
 
     const itemResult = await pool.query(
-      `SELECT bi.*, p.name, p.slug, p.spirit_type, p.spirit_subtype,
-              p.abv, p.proof, p.age_statement, p.volume_ml, p.msrp_usd,
-              p.mash_bill, p.barrel_type, p.barrel_char_level, p.finish_type,
+      `SELECT
+              -- bunker_item own columns
+              bi.id, bi.user_id, bi.product_id, bi.personal_rating, bi.notes,
+              bi.created_at, bi.updated_at,
+              -- override-only fields (no product counterpart)
+              bi.batch_number, bi.barrel_number, bi.year_distilled,
+              -- override fields with product counterparts (raw override values)
+              bi.release_year  AS override_release_year,
+              bi.proof         AS override_proof,
+              bi.abv           AS override_abv,
+              bi.age_statement AS override_age_statement,
+              bi.mash_bill     AS override_mash_bill,
+              -- product fields (raw, for display and admin context)
+              p.name, p.slug, p.spirit_type, p.spirit_subtype,
+              p.proof          AS product_proof,
+              p.abv            AS product_abv,
+              p.age_statement  AS product_age_statement,
+              p.mash_bill      AS product_mash_bill,
+              p.release_year   AS product_release_year,
+              p.batch_number   AS product_batch_number,
+              p.barrel_number  AS product_barrel_number,
+              p.volume_ml, p.msrp_usd,
+              p.barrel_type, p.barrel_char_level, p.finish_type,
               p.is_limited_edition, p.is_discontinued, p.approval_status,
               p.description,
+              -- effective (resolved) values — COALESCE override over product
+              COALESCE(bi.proof,         p.proof)         AS proof,
+              COALESCE(bi.abv,           p.abv)           AS abv,
+              COALESCE(bi.age_statement, p.age_statement) AS age_statement,
+              COALESCE(bi.mash_bill,     p.mash_bill)     AS mash_bill,
+              COALESCE(bi.release_year,  p.release_year)  AS release_year,
+              -- joins
               c.name AS company_name,
               d.name AS distiller_name,
               COALESCE(pi.cdn_url, (
@@ -227,6 +254,33 @@ export async function updateBunkerItem(req: Request, res: Response, next: NextFu
     if ('notes' in req.body) {
       updates.push(`notes = $${idx++}`);
       values.push(req.body.notes ?? null);
+    }
+
+    const OVERRIDE_FIELDS: { key: string; col: string; numeric?: boolean }[] = [
+      { key: 'batch_number',   col: 'batch_number' },
+      { key: 'barrel_number',  col: 'barrel_number' },
+      { key: 'year_distilled', col: 'year_distilled', numeric: true },
+      { key: 'release_year',   col: 'release_year',   numeric: true },
+      { key: 'proof',          col: 'proof',          numeric: true },
+      { key: 'abv',            col: 'abv',            numeric: true },
+      { key: 'age_statement',  col: 'age_statement' },
+      { key: 'mash_bill',      col: 'mash_bill' },
+    ];
+    for (const field of OVERRIDE_FIELDS) {
+      if (field.key in req.body) {
+        const raw = req.body[field.key];
+        let val: unknown;
+        if (raw === null || raw === '' || raw === undefined) {
+          val = null;
+        } else if (field.numeric) {
+          const n = Number(raw);
+          val = isNaN(n) ? null : n;
+        } else {
+          val = String(raw).trim() || null;
+        }
+        updates.push(`${field.col} = $${idx++}`);
+        values.push(val);
+      }
     }
 
     if (updates.length === 0) {

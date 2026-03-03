@@ -156,3 +156,23 @@ CREATE TABLE IF NOT EXISTS release_notes (
 CREATE INDEX IF NOT EXISTS idx_release_notes_created ON release_notes(created_at DESC);
 
 ALTER TABLE users ADD COLUMN IF NOT EXISTS last_release_notes_viewed_at TIMESTAMPTZ;
+
+-- ================================================================
+-- Bunker Item — Personal Override Fields
+-- Nullable overrides that take precedence over the master product
+-- values when set. NULL means "use the product value".
+--
+-- Overrides with product-level counterparts (COALESCE in queries):
+--   release_year, proof, abv, age_statement, mash_bill
+--
+-- Override-only fields (no product fallback):
+--   batch_number, barrel_number, year_distilled
+-- ================================================================
+ALTER TABLE bunker_items ADD COLUMN IF NOT EXISTS batch_number  VARCHAR(100);
+ALTER TABLE bunker_items ADD COLUMN IF NOT EXISTS barrel_number VARCHAR(100);
+ALTER TABLE bunker_items ADD COLUMN IF NOT EXISTS year_distilled INTEGER;
+ALTER TABLE bunker_items ADD COLUMN IF NOT EXISTS release_year   INTEGER;
+ALTER TABLE bunker_items ADD COLUMN IF NOT EXISTS proof          DOUBLE PRECISION;
+ALTER TABLE bunker_items ADD COLUMN IF NOT EXISTS abv            DECIMAL(5,4);
+ALTER TABLE bunker_items ADD COLUMN IF NOT EXISTS age_statement  VARCHAR(100);
+ALTER TABLE bunker_items ADD COLUMN IF NOT EXISTS mash_bill      VARCHAR(500);

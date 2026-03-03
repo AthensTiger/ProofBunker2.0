@@ -6,6 +6,7 @@ import { useUIStore } from '../stores/uiStore';
 import ProductInfoSection from '../components/bunker/ProductInfoSection';
 import PersonalInfoSection from '../components/bunker/PersonalInfoSection';
 import BottlesTable from '../components/bunker/BottlesTable';
+import OverrideDetailsSection from '../components/bunker/OverrideDetailsSection';
 
 export default function BunkerItemDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -69,6 +70,8 @@ export default function BunkerItemDetailPage() {
 
       <div className="space-y-6">
         <ProductInfoSection item={item} user={currentUser} />
+
+        <OverrideDetailsSection item={item} />
 
         <BottlesTable
           bottles={item.bottles}

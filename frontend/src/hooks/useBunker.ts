@@ -44,8 +44,19 @@ export function useUpdateBunkerItem() {
   const api = useApiClient();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...body }: { id: number; personal_rating?: number | null; notes?: string | null }) =>
-      api.put(`/bunker/${id}`, body),
+    mutationFn: ({ id, ...body }: {
+      id: number;
+      personal_rating?: number | null;
+      notes?: string | null;
+      batch_number?: string | null;
+      barrel_number?: string | null;
+      year_distilled?: number | null;
+      release_year?: number | null;
+      proof?: number | null;
+      abv?: number | null;
+      age_statement?: string | null;
+      mash_bill?: string | null;
+    }) => api.put(`/bunker/${id}`, body),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['bunker', 'item', variables.id] });
       queryClient.invalidateQueries({ queryKey: ['bunker', 'item', String(variables.id)] });
