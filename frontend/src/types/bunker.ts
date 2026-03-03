@@ -88,6 +88,14 @@ export interface AddToBunkerRequest {
   storage_location_id?: number | null;
   status?: string;
   purchase_price?: number | null;
+  batch_number?: string | null;
+  barrel_number?: string | null;
+  year_distilled?: number | null;
+  release_year?: number | null;
+  proof?: number | null;
+  abv?: number | null;
+  age_statement?: string | null;
+  mash_bill?: string | null;
 }
 
 export interface AddToBunkerResponse {

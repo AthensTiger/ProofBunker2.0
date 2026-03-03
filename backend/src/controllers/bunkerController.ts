@@ -210,6 +210,38 @@ export async function addToBunker(req: Request, res: Response, next: NextFunctio
       );
       const bunkerItemId = itemResult.rows[0].id;
 
+      // Apply any bottle-specific override fields to the bunker_item
+      const ITEM_OVERRIDE_FIELDS: { key: string; col: string; numeric?: boolean }[] = [
+        { key: 'batch_number',   col: 'batch_number' },
+        { key: 'barrel_number',  col: 'barrel_number' },
+        { key: 'year_distilled', col: 'year_distilled', numeric: true },
+        { key: 'release_year',   col: 'release_year',   numeric: true },
+        { key: 'proof',          col: 'proof',          numeric: true },
+        { key: 'abv',            col: 'abv',            numeric: true },
+        { key: 'age_statement',  col: 'age_statement' },
+        { key: 'mash_bill',      col: 'mash_bill' },
+      ];
+      const overrideUpdates: string[] = [];
+      const overrideValues: unknown[] = [];
+      let oidx = 1;
+      for (const field of ITEM_OVERRIDE_FIELDS) {
+        if (field.key in req.body && req.body[field.key] !== undefined && req.body[field.key] !== '') {
+          const raw = req.body[field.key];
+          const val = field.numeric ? (isNaN(Number(raw)) ? null : Number(raw)) : (String(raw).trim() || null);
+          if (val !== null) {
+            overrideUpdates.push(`${field.col} = $${oidx++}`);
+            overrideValues.push(val);
+          }
+        }
+      }
+      if (overrideUpdates.length > 0) {
+        overrideValues.push(bunkerItemId);
+        await client.query(
+          `UPDATE bunker_items SET ${overrideUpdates.join(', ')} WHERE id = $${oidx}`,
+          overrideValues
+        );
+      }
+
       // Create a bottle
       const bottleResult = await client.query(
         `INSERT INTO bunker_bottles (bunker_item_id, storage_location_id, status, purchase_price)

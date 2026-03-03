@@ -34,7 +34,19 @@ export default function AddBottlePage() {
     setStep('submit-new');
   };
 
-  const handleAddToBundle = (details: { storage_location_id?: number; status: string; purchase_price?: number }) => {
+  const handleAddToBundle = (details: {
+    storage_location_id?: number;
+    status: string;
+    purchase_price?: number;
+    batch_number?: string | null;
+    barrel_number?: string | null;
+    year_distilled?: number | null;
+    release_year?: number | null;
+    proof?: number | null;
+    abv?: number | null;
+    age_statement?: string | null;
+    mash_bill?: string | null;
+  }) => {
     if (!selectedProduct) return;
     addMutation.mutate(
       {
@@ -42,6 +54,14 @@ export default function AddBottlePage() {
         storage_location_id: details.storage_location_id ?? null,
         status: details.status,
         purchase_price: details.purchase_price ?? null,
+        batch_number: details.batch_number,
+        barrel_number: details.barrel_number,
+        year_distilled: details.year_distilled,
+        release_year: details.release_year,
+        proof: details.proof,
+        abv: details.abv,
+        age_statement: details.age_statement,
+        mash_bill: details.mash_bill,
       },
       {
         onSuccess: (data) => {
