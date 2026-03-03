@@ -19,6 +19,8 @@ export interface BunkerListItem {
   bottle_count: number;
   location_names: string[];
   statuses: string[];
+  primary_bottle_id: number | null;
+  primary_status: 'sealed' | 'opened' | 'empty' | null;
 }
 
 export interface BunkerItemDetail extends BunkerListItem {

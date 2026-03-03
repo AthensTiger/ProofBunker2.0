@@ -6,9 +6,11 @@ import Badge from '../ui/Badge';
 interface BunkerTableProps {
   items: BunkerListItem[];
   showImages: boolean;
+  onStatusAction: (bottleId: number, newStatus: 'opened' | 'empty') => void;
+  onDelete: (item: BunkerListItem) => void;
 }
 
-export default function BunkerTable({ items, showImages }: BunkerTableProps) {
+export default function BunkerTable({ items, showImages, onStatusAction, onDelete }: BunkerTableProps) {
   const navigate = useNavigate();
 
   return (
@@ -25,6 +27,7 @@ export default function BunkerTable({ items, showImages }: BunkerTableProps) {
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Qty</th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden lg:table-cell">Locations</th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">Status</th>
+            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase w-20"></th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">
@@ -66,6 +69,32 @@ export default function BunkerTable({ items, showImages }: BunkerTableProps) {
               </td>
               <td className="px-4 py-3 text-sm text-gray-600 hidden md:table-cell capitalize">
                 {item.statuses.length > 0 ? item.statuses.join(', ') : '--'}
+              </td>
+              <td className="px-4 py-3 text-right">
+                {item.primary_status === 'sealed' && item.primary_bottle_id && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onStatusAction(item.primary_bottle_id!, 'opened'); }}
+                    className="text-sm font-medium text-amber-700 hover:text-amber-900"
+                  >
+                    Open
+                  </button>
+                )}
+                {item.primary_status === 'opened' && item.primary_bottle_id && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onStatusAction(item.primary_bottle_id!, 'empty'); }}
+                    className="text-sm font-medium text-amber-700 hover:text-amber-900"
+                  >
+                    Empty
+                  </button>
+                )}
+                {item.primary_status === 'empty' && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onDelete(item); }}
+                    className="text-sm font-medium text-red-500 hover:text-red-700"
+                  >
+                    Delete
+                  </button>
+                )}
               </td>
             </tr>
           ))}

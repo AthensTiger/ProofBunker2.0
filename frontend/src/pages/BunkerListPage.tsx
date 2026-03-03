@@ -1,23 +1,50 @@
 import { useState, useMemo } from 'react';
-import { useBunkerList } from '../hooks/useBunker';
+import { useBunkerList, useUpdateBottle, useRemoveBunkerItem } from '../hooks/useBunker';
 import { useLocations } from '../hooks/useLocations';
 import { useSpiritTypes } from '../hooks/useProducts';
-import type { BunkerFilters } from '../types/bunker';
+import { useUIStore } from '../stores/uiStore';
+import type { BunkerFilters, BunkerListItem } from '../types/bunker';
+import Dialog from '../components/ui/Dialog';
 import BunkerActionRow from '../components/bunker/BunkerActionRow';
 import BunkerTable from '../components/bunker/BunkerTable';
 import BunkerEmptyState from '../components/bunker/BunkerEmptyState';
 
 export default function BunkerListPage() {
+  const addToast = useUIStore((s) => s.addToast);
   const [searchText, setSearchText] = useState('');
   const [showImages, setShowImages] = useState(false);
   const [filters, setFilters] = useState<BunkerFilters>({
     sort_by: 'name',
     sort_dir: 'asc',
   });
+  const [deleteTarget, setDeleteTarget] = useState<BunkerListItem | null>(null);
 
   const { data: items = [], isLoading } = useBunkerList(filters);
   const { data: locations = [] } = useLocations();
   const { data: spiritTypes = [] } = useSpiritTypes();
+  const updateMutation = useUpdateBottle();
+  const removeMutation = useRemoveBunkerItem();
+
+  const handleStatusAction = (bottleId: number, newStatus: 'opened' | 'empty') => {
+    updateMutation.mutate(
+      { bottleId, status: newStatus },
+      {
+        onSuccess: () => addToast('success', newStatus === 'opened' ? 'Bottle marked as opened' : 'Bottle marked as empty'),
+        onError: () => addToast('error', 'Failed to update status'),
+      }
+    );
+  };
+
+  const handleDelete = () => {
+    if (!deleteTarget) return;
+    removeMutation.mutate(deleteTarget.id, {
+      onSuccess: () => {
+        addToast('success', `"${deleteTarget.name}" removed from your bunker`);
+        setDeleteTarget(null);
+      },
+      onError: () => addToast('error', 'Failed to remove item'),
+    });
+  };
 
   const filteredItems = useMemo(() => {
     if (!searchText.trim()) return items;
@@ -74,11 +101,37 @@ export default function BunkerListPage() {
             <BunkerTable
               items={filteredItems}
               showImages={showImages}
+              onStatusAction={handleStatusAction}
+              onDelete={setDeleteTarget}
             />
           )}
         </>
       )}
 
+      <Dialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        title="Remove from Bunker"
+      >
+        <p className="text-gray-600 mb-6">
+          Are you sure you want to remove <strong>{deleteTarget?.name}</strong> and all its bottles from your bunker?
+        </p>
+        <div className="flex justify-end gap-3">
+          <button
+            onClick={() => setDeleteTarget(null)}
+            className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleDelete}
+            disabled={removeMutation.isPending}
+            className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50"
+          >
+            {removeMutation.isPending ? 'Removing...' : 'Remove'}
+          </button>
+        </div>
+      </Dialog>
     </div>
   );
 }

@@ -65,7 +65,13 @@ export async function getBunkerList(req: Request, res: Response, next: NextFunct
               )) AS image_url,
               COUNT(bb.id)::int AS bottle_count,
               ARRAY_REMOVE(ARRAY_AGG(DISTINCT usl.name), NULL) AS location_names,
-              ARRAY_REMOVE(ARRAY_AGG(DISTINCT bb.status), NULL) AS statuses
+              ARRAY_REMOVE(ARRAY_AGG(DISTINCT bb.status), NULL) AS statuses,
+              (SELECT bb2.id FROM bunker_bottles bb2
+               WHERE bb2.bunker_item_id = bi.id
+               ORDER BY CASE bb2.status WHEN 'sealed' THEN 1 WHEN 'opened' THEN 2 WHEN 'empty' THEN 3 END, bb2.id LIMIT 1) AS primary_bottle_id,
+              (SELECT bb2.status FROM bunker_bottles bb2
+               WHERE bb2.bunker_item_id = bi.id
+               ORDER BY CASE bb2.status WHEN 'sealed' THEN 1 WHEN 'opened' THEN 2 WHEN 'empty' THEN 3 END, bb2.id LIMIT 1) AS primary_status
        FROM bunker_items bi
        JOIN products p ON p.id = bi.product_id
        LEFT JOIN companies c ON c.id = p.company_id
