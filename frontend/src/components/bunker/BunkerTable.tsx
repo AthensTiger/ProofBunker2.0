@@ -62,7 +62,7 @@ export default function BunkerTable({ items, showImages, onStatusAction, onDelet
                   ? <>{item.spirit_subtype} <span className="text-gray-400 text-xs normal-case">({item.spirit_type})</span></>
                   : item.spirit_type}
               </td>
-              <td className="px-4 py-3 text-sm text-gray-600 hidden sm:table-cell">{item.abv != null ? `${Number(item.abv).toFixed(3)}%` : '--'}</td>
+              <td className="px-4 py-3 text-sm text-gray-600 hidden sm:table-cell">{item.abv != null ? `${parseFloat((Number(item.abv) * 100).toFixed(1))}%` : '--'}</td>
               <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                 <StarRatingInput rating={item.personal_rating} onChange={(r) => onRatingChange(item.id, r)} size="sm" />
               </td>

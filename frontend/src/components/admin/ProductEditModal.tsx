@@ -81,7 +81,7 @@ export default function ProductEditModal({ productId, onClose, onSaved }: Produc
     if (selected.distiller_name != null) setDistillerName(String(selected.distiller_name));
     if (selected.description != null) setDescription(String(selected.description));
     if (selected.proof != null) setProof(String(selected.proof));
-    if (selected.abv != null) setAbv(String(selected.abv));
+    if (selected.abv != null) setAbv(String(parseFloat((Number(selected.abv) * 100).toFixed(3))));
     if (selected.age_statement != null) setAgeStatement(String(selected.age_statement));
     if (selected.volume_ml != null) setVolumeMl(String(selected.volume_ml));
     if (selected.mash_bill != null) setMashBill(String(selected.mash_bill));
@@ -109,7 +109,7 @@ export default function ProductEditModal({ productId, onClose, onSaved }: Produc
     setDistillerName(product.distiller_name || '');
     setDescription(product.description || '');
     setProof(product.proof != null ? String(product.proof) : '');
-    setAbv(product.abv != null ? String(product.abv) : '');
+    setAbv(product.abv != null ? String(parseFloat((Number(product.abv) * 100).toFixed(3))) : '');
     setAgeStatement(product.age_statement || '');
     setVolumeMl(product.volume_ml != null ? String(product.volume_ml) : '');
     setMashBill(product.mash_bill || '');
@@ -141,7 +141,7 @@ export default function ProductEditModal({ productId, onClose, onSaved }: Produc
       distiller_name: distillerName.trim() || null,
       description: description.trim() || null,
       proof: proof ? parseFloat(proof) : null,
-      abv: abv ? parseFloat(abv) : null,
+      abv: abv ? parseFloat(abv) / 100 : null,
       age_statement: ageStatement.trim() || null,
       volume_ml: volumeMl ? parseInt(volumeMl) : null,
       mash_bill: mashBill.trim() || null,

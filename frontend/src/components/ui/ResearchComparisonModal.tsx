@@ -14,7 +14,7 @@ const FIELDS: FieldDef[] = [
   { key: 'company_name', label: 'Company / Brand' },
   { key: 'distiller_name', label: 'Distiller' },
   { key: 'proof', label: 'Proof' },
-  { key: 'abv', label: 'ABV', format: (v) => `${v}%` },
+  { key: 'abv', label: 'ABV', format: (v) => `${parseFloat((Number(v) * 100).toFixed(1))}%` },
   { key: 'age_statement', label: 'Age Statement' },
   { key: 'volume_ml', label: 'Volume', format: (v) => `${v} ml` },
   { key: 'mash_bill', label: 'Mash Bill' },

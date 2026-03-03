@@ -100,7 +100,7 @@ export default function ProductInfoSection({ item, user }: ProductInfoSectionPro
             <Detail label="Type" value={item.spirit_type} capitalize />
             {item.spirit_subtype && <Detail label="Subtype" value={item.spirit_subtype} capitalize />}
             {item.proof != null && <Detail label="Proof" value={String(item.proof)} />}
-            {item.abv != null && <Detail label="ABV" value={`${item.abv}%`} />}
+            {item.abv != null && <Detail label="ABV" value={`${parseFloat((Number(item.abv) * 100).toFixed(1))}%`} />}
             {item.age_statement && <Detail label="Age" value={item.age_statement} />}
             {item.volume_ml != null && <Detail label="Volume" value={`${item.volume_ml}ml`} />}
             {item.msrp_usd != null && <Detail label="MSRP" value={`$${item.msrp_usd.toFixed(2)}`} />}

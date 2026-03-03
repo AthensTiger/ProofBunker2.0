@@ -124,7 +124,7 @@ export default function MenuPreviewPage() {
 
                         {/* ABV */}
                         {settings.show_abv && item.abv != null && (
-                          <p className="mt-0.5 text-gray-400">ABV: {Number(item.abv).toFixed(3)}%</p>
+                          <p className="mt-0.5 text-gray-400">ABV: {parseFloat((Number(item.abv) * 100).toFixed(1))}%</p>
                         )}
 
                         {/* Mash Bill */}

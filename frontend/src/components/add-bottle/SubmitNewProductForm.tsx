@@ -95,7 +95,7 @@ export default function SubmitNewProductForm({ initialUpc, locations, onSubmit, 
     if (selected.distiller_name != null) setDistillerName(String(selected.distiller_name));
     if (selected.description != null) setDescription(String(selected.description));
     if (selected.proof != null) setProof(String(selected.proof));
-    if (selected.abv != null) setAbv(String(selected.abv));
+    if (selected.abv != null) setAbv(String(parseFloat((Number(selected.abv) * 100).toFixed(3))));
     if (selected.age_statement != null) setAgeStatement(String(selected.age_statement));
     if (selected.volume_ml != null) setVolumeMl(String(selected.volume_ml));
     if (selected.mash_bill != null) setMashBill(String(selected.mash_bill));
@@ -117,7 +117,7 @@ export default function SubmitNewProductForm({ initialUpc, locations, onSubmit, 
     setDistillerName(p.distiller_name || '');
     setDescription(p.description || '');
     setProof(p.proof != null ? String(p.proof) : '');
-    setAbv(p.abv != null ? String(p.abv) : '');
+    setAbv(p.abv != null ? String(parseFloat((Number(p.abv) * 100).toFixed(3))) : '');
     setAgeStatement(p.age_statement || '');
     setVolumeMl(p.volume_ml != null ? String(p.volume_ml) : '');
     setMashBill(p.mash_bill || '');
@@ -177,7 +177,7 @@ export default function SubmitNewProductForm({ initialUpc, locations, onSubmit, 
       distiller_name: distillerName.trim() || undefined,
       description: description.trim() || undefined,
       proof: proof ? parseFloat(proof) : undefined,
-      abv: abv ? parseFloat(abv) : undefined,
+      abv: abv ? parseFloat(abv) / 100 : undefined,
       age_statement: ageStatement.trim() || undefined,
       volume_ml: volumeMl ? parseInt(volumeMl) : undefined,
       mash_bill: mashBill.trim() || undefined,
