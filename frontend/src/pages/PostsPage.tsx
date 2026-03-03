@@ -68,11 +68,15 @@ export default function PostsPage() {
 
   const handleSave = (data: { title: string; content: string; product_id?: number | null }) => {
     if (editPost) {
+      const wasSubmitted = editPost.status !== 'draft';
       updatePost.mutate(
         { id: editPost.id, ...data },
         {
-          onSuccess: () => { closeEditor(); addToast('success', 'Draft updated'); },
-          onError: () => addToast('error', 'Failed to save draft'),
+          onSuccess: () => {
+            closeEditor();
+            addToast('success', wasSubmitted ? 'Post revised — resubmit when ready' : 'Draft updated');
+          },
+          onError: () => addToast('error', 'Failed to save changes'),
         }
       );
     } else {
@@ -208,14 +212,16 @@ export default function PostsPage() {
                   </div>
 
                   <div className="flex flex-col gap-1.5 shrink-0">
+                    {(post.status === 'draft' || post.status === 'pending_approval' || post.status === 'published') && (
+                      <button
+                        onClick={() => openEdit(post)}
+                        className="px-3 py-1 text-xs font-medium text-amber-700 hover:bg-amber-50 rounded-md border border-amber-200 transition-colors"
+                      >
+                        Edit
+                      </button>
+                    )}
                     {post.status === 'draft' && (
                       <>
-                        <button
-                          onClick={() => openEdit(post)}
-                          className="px-3 py-1 text-xs font-medium text-amber-700 hover:bg-amber-50 rounded-md border border-amber-200 transition-colors"
-                        >
-                          Edit
-                        </button>
                         <button
                           onClick={() => handleSubmit(post)}
                           disabled={submitPost.isPending}

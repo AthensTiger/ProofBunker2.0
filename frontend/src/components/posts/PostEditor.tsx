@@ -180,6 +180,13 @@ export default function PostEditor({ initial, title, onTitleChange, onSave, onCa
         </div>
       </div>
 
+      {/* Revert notice for submitted/published posts */}
+      {initial && initial.status !== 'draft' && (
+        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+          Saving changes will move this post back to <strong>Draft</strong>. You can resubmit for review when ready.
+        </p>
+      )}
+
       {/* Actions */}
       <div className="flex items-center gap-3">
         <button
@@ -187,7 +194,7 @@ export default function PostEditor({ initial, title, onTitleChange, onSave, onCa
           disabled={!canSubmit || isSaving}
           className="px-4 py-2 bg-amber-700 text-white text-sm font-medium rounded-lg hover:bg-amber-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          {isSaving ? 'Saving…' : 'Save Draft'}
+          {isSaving ? 'Saving…' : initial && initial.status !== 'draft' ? 'Save Revision' : 'Save Draft'}
         </button>
         <button
           onClick={onCancel}

@@ -100,8 +100,10 @@ export async function updatePost(req: Request, res: Response): Promise<void> {
     return;
   }
 
-  if (post.status !== 'draft') {
-    res.status(409).json({ error: 'Only draft posts can be edited' });
+  // Allow editing draft, pending_approval, and published posts.
+  // Non-draft posts revert to draft so they require re-submission.
+  if (!['draft', 'pending_approval', 'published'].includes(post.status)) {
+    res.status(409).json({ error: 'This post cannot be edited' });
     return;
   }
 
@@ -110,6 +112,7 @@ export async function updatePost(req: Request, res: Response): Promise<void> {
      SET title = COALESCE($1, title),
          content = COALESCE($2, content),
          product_id = $3,
+         status = 'draft',
          updated_at = NOW()
      WHERE id = $4
      RETURNING *`,
