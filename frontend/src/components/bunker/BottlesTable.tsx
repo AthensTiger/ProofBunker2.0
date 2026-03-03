@@ -107,7 +107,7 @@ export default function BottlesTable({ bottles, locations, productId }: BottlesT
                   <span className="text-sm text-gray-600">{bottle.location_name}</span>
                 )}
                 {bottle.purchase_price != null && (
-                  <span className="text-sm text-gray-600">${bottle.purchase_price.toFixed(2)}</span>
+                  <span className="text-sm text-gray-600">${Number(bottle.purchase_price).toFixed(2)}</span>
                 )}
               </div>
               <div className="flex items-center gap-2">

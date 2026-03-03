@@ -3,9 +3,10 @@ import { Navigate } from 'react-router-dom';
 import LoadingScreen from '../components/layout/LoadingScreen';
 
 export default function LoginPage() {
-  const { loginWithRedirect, isAuthenticated, isLoading } = useAuth0();
+  const { loginWithRedirect, isAuthenticated, isLoading, error } = useAuth0();
 
-  if (isLoading) return <LoadingScreen />;
+  // If still loading after 10 s, stop waiting and show the login button
+  if (isLoading && !error) return <LoadingScreen />;
   if (isAuthenticated) return <Navigate to="/bunker" replace />;
 
   return (

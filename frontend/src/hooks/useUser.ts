@@ -1,12 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth0 } from '@auth0/auth0-react';
 import { useApiClient } from '../api/client';
 import type { UserRecord } from '../types/user';
 
 export function useCurrentUser() {
   const api = useApiClient();
+  const { isAuthenticated } = useAuth0();
   return useQuery({
     queryKey: ['user', 'me'],
     queryFn: () => api.get<UserRecord>('/users/me'),
+    enabled: isAuthenticated,
   });
 }
 

@@ -44,6 +44,33 @@ export async function verifyAge(req: Request, res: Response, next: NextFunction)
   }
 }
 
+export async function getContacts(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const userId = req.user!.id;
+
+    // Return users connected via active bunker shares (either direction)
+    const result = await pool.query(
+      `SELECT DISTINCT u.id,
+              COALESCE(u.display_name, u.email) AS name,
+              u.avatar_url
+       FROM bunker_shares bs
+       JOIN users u ON u.id = CASE
+         WHEN bs.owner_user_id = $1 THEN bs.shared_with_user_id
+         ELSE bs.owner_user_id
+       END
+       WHERE (bs.owner_user_id = $1 OR bs.shared_with_user_id = $1)
+         AND bs.status = 'active'
+         AND u.id IS NOT NULL
+       ORDER BY name ASC`,
+      [userId]
+    );
+
+    res.json(result.rows);
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function updatePreferences(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const userId = req.user!.id;

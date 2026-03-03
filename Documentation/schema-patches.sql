@@ -54,3 +54,66 @@ CREATE TABLE IF NOT EXISTS support_tickets (
 );
 CREATE INDEX IF NOT EXISTS idx_support_tickets_user ON support_tickets(user_id);
 CREATE INDEX IF NOT EXISTS idx_support_tickets_status ON support_tickets(status);
+
+-- ================================================================
+-- Phase 1: Direct Messaging
+-- ================================================================
+
+CREATE TABLE IF NOT EXISTS users_conversations (
+  id SERIAL PRIMARY KEY,
+  user_ids INTEGER[] NOT NULL,
+  last_message_at TIMESTAMPTZ DEFAULT NOW(),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_conv_users ON users_conversations USING GIN(user_ids);
+
+CREATE TABLE IF NOT EXISTS users_direct_messages (
+  id SERIAL PRIMARY KEY,
+  conversation_id INTEGER NOT NULL REFERENCES users_conversations(id) ON DELETE CASCADE,
+  sender_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  content TEXT NOT NULL,
+  read_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_dm_conv ON users_direct_messages(conversation_id, created_at);
+
+-- ================================================================
+-- Phase 2: Blog / Content System
+-- ================================================================
+
+CREATE TABLE IF NOT EXISTS user_posts (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  product_id INTEGER REFERENCES products(id) ON DELETE SET NULL,
+  title TEXT NOT NULL,
+  content TEXT NOT NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'draft'
+    CHECK (status IN ('draft', 'pending_approval', 'published', 'public')),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_user_posts_user ON user_posts(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_posts_status ON user_posts(status);
+
+CREATE TABLE IF NOT EXISTS post_approvals (
+  id SERIAL PRIMARY KEY,
+  post_id INTEGER NOT NULL REFERENCES user_posts(id) ON DELETE CASCADE,
+  curator_id INTEGER NOT NULL REFERENCES users(id),
+  decision VARCHAR(10) NOT NULL CHECK (decision IN ('approved', 'rejected')),
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ================================================================
+-- Notifications (required by Phase 1 messaging + Phase 2 posts)
+-- ================================================================
+
+CREATE TABLE IF NOT EXISTS notifications (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  type VARCHAR(40) NOT NULL,
+  payload JSONB NOT NULL DEFAULT '{}',
+  read_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, read_at);
