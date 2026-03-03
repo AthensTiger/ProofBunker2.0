@@ -6,6 +6,7 @@ export interface UserRecord {
   avatar_url: string | null;
   role: 'user' | 'curator' | 'admin';
   age_verified: boolean;
+  email_verified: boolean;
   preferences: Record<string, unknown>;
   created_at: Date;
   updated_at: Date;

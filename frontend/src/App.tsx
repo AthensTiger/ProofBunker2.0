@@ -14,6 +14,7 @@ import SharedBunkersPage from './pages/SharedBunkersPage';
 import SharedBunkerViewPage from './pages/SharedBunkerViewPage';
 import AdminPage from './pages/AdminPage';
 import SupportPage from './pages/SupportPage';
+import VerifyEmailPage from './pages/VerifyEmailPage';
 
 const router = createBrowserRouter([
   {
@@ -37,6 +38,7 @@ const router = createBrowserRouter([
   },
   { path: '/login', element: <LoginPage /> },
   { path: '/age-gate', element: <AgeGatePage /> },
+  { path: '/verify-email', element: <VerifyEmailPage /> },
 ]);
 
 export default function App() {

@@ -22,6 +22,10 @@ ALTER TABLE product_upcs ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NUL
 ALTER TABLE bunker_bottles DROP CONSTRAINT IF EXISTS chk_bottle_status;
 ALTER TABLE bunker_bottles ADD CONSTRAINT chk_bottle_status CHECK (status IN ('sealed', 'opened', 'empty'));
 
+-- Users: email_verified flag for manual admin approval of new users
+-- Default TRUE so existing users keep access; new users are inserted with FALSE
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN NOT NULL DEFAULT TRUE;
+
 -- ================================================================
 -- Support: chat messages and support tickets
 -- ================================================================

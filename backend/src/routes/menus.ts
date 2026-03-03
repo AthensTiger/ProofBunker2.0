@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import jwtCheck from '../config/auth';
-import { ensureUserExists } from '../middleware/auth';
+import { ensureUserExists, requireEmailVerified } from '../middleware/auth';
 import {
   getMenuTemplates,
   getMenuTemplate,
@@ -14,7 +14,7 @@ import '../types';
 
 const router = Router();
 
-router.use(jwtCheck as any, ensureUserExists);
+router.use(jwtCheck as any, ensureUserExists, requireEmailVerified);
 
 router.get('/', getMenuTemplates);
 router.post('/', createMenuTemplate);

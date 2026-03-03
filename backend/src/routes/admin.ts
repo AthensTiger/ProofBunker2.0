@@ -27,6 +27,7 @@ import {
   mergeDistiller,
   getAllUsers,
   updateUserRole,
+  setEmailVerified,
 } from '../controllers/adminController';
 import '../types';
 
@@ -69,5 +70,6 @@ router.post('/distillers/:id/merge', mergeDistiller);
 // Users (admin only — role check inside controller)
 router.get('/users', getAllUsers);
 router.put('/users/:id/role', updateUserRole);
+router.put('/users/:id/email-verified', setEmailVerified);
 
 export default router;

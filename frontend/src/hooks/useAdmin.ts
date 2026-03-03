@@ -287,3 +287,15 @@ export function useUpdateUserRole() {
     },
   });
 }
+
+export function useSetEmailVerified() {
+  const api = useApiClient();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, email_verified }: { id: number; email_verified: boolean }) =>
+      api.put(`/admin/users/${id}/email-verified`, { email_verified }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'all-users'] });
+    },
+  });
+}

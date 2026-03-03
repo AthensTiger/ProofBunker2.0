@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import jwtCheck from '../config/auth';
-import { ensureUserExists } from '../middleware/auth';
+import { ensureUserExists, requireEmailVerified } from '../middleware/auth';
 import upload from '../middleware/upload';
 import {
   getBunkerList,
@@ -18,7 +18,7 @@ import '../types';
 
 const router = Router();
 
-router.use(jwtCheck as any, ensureUserExists);
+router.use(jwtCheck as any, ensureUserExists, requireEmailVerified);
 
 // Bottles (physical bottle-level) — static paths before :id params
 router.put('/bottles/:bottleId', updateBottle);

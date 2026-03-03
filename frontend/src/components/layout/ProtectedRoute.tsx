@@ -20,6 +20,9 @@ export default function ProtectedRoute() {
   // Redirect to age gate if not verified
   if (user && !user.age_verified) return <Navigate to="/age-gate" replace />;
 
+  // Redirect to verify-email page if email not verified
+  if (user && user.age_verified && !user.email_verified) return <Navigate to="/verify-email" replace />;
+
   return (
     <div className="min-h-screen bg-gray-50 print:min-h-0 print:bg-white">
       <Navbar />

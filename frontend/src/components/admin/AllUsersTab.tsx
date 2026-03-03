@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useAllUsers, useUpdateUserRole } from '../../hooks/useAdmin';
+import { useAllUsers, useUpdateUserRole, useSetEmailVerified } from '../../hooks/useAdmin';
 import { useCurrentUser } from '../../hooks/useUser';
 import { useUIStore } from '../../stores/uiStore';
 
@@ -15,6 +15,7 @@ export default function AllUsersTab() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const updateRole = useUpdateUserRole();
+  const setEmailVerified = useSetEmailVerified();
 
   const { data, isLoading } = useAllUsers({ q: search || undefined, limit: 50, offset: page * 50 });
   const users = data?.users || [];
@@ -30,6 +31,19 @@ export default function AllUsersTab() {
       {
         onSuccess: () => addToast('success', `Role updated to ${newRole}`),
         onError: (err: any) => addToast('error', err?.message || 'Failed to update role'),
+      }
+    );
+  };
+
+  const handleEmailVerifiedToggle = (userId: number, displayName: string | null, currentValue: boolean) => {
+    const label = displayName || 'this user';
+    const action = currentValue ? 'revoke verification from' : 'verify';
+    if (!confirm(`${action.charAt(0).toUpperCase() + action.slice(1)} ${label}?`)) return;
+    setEmailVerified.mutate(
+      { id: userId, email_verified: !currentValue },
+      {
+        onSuccess: () => addToast('success', currentValue ? 'Verification revoked' : 'User verified'),
+        onError: (err: any) => addToast('error', err?.message || 'Failed to update verification'),
       }
     );
   };
@@ -76,6 +90,20 @@ export default function AllUsersTab() {
                 <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${ROLE_COLORS[u.role] || ROLE_COLORS.user}`}>
                   {u.role}
                 </span>
+                {isAdmin && (
+                  <button
+                    onClick={() => handleEmailVerifiedToggle(u.id, u.display_name, u.email_verified)}
+                    disabled={setEmailVerified.isPending}
+                    title={u.email_verified ? 'Click to revoke verification' : 'Click to verify user'}
+                    className={`px-2 py-0.5 text-xs font-medium rounded-full transition-colors disabled:opacity-50 ${
+                      u.email_verified
+                        ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                        : 'bg-red-100 text-red-700 hover:bg-red-200'
+                    }`}
+                  >
+                    {u.email_verified ? 'Verified' : 'Unverified'}
+                  </button>
+                )}
                 {isAdmin && !isSelf && (
                   <select
                     value={u.role}

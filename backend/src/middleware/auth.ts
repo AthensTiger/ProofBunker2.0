@@ -2,6 +2,14 @@ import { Request, Response, NextFunction } from 'express';
 import pool from '../config/database';
 import { UserRecord } from '../types';
 
+export function requireEmailVerified(req: Request, res: Response, next: NextFunction): void {
+  if (!req.user || !req.user.email_verified) {
+    res.status(403).json({ error: 'Email verification required', code: 'EMAIL_NOT_VERIFIED' });
+    return;
+  }
+  next();
+}
+
 export function requireRole(...roles: UserRecord['role'][]) {
   return (req: Request, res: Response, next: NextFunction): void => {
     if (!req.user || !roles.includes(req.user.role)) {
@@ -86,10 +94,10 @@ export async function ensureUserExists(req: Request, _res: Response, next: NextF
       const isFirstUser = userCount.rows[0].count === '0';
 
       result = await pool.query<UserRecord>(
-        `INSERT INTO users (auth0_id, email, role)
-         VALUES ($1, $2, $3)
+        `INSERT INTO users (auth0_id, email, role, email_verified)
+         VALUES ($1, $2, $3, $4)
          RETURNING *`,
-        [auth0Id, email, isFirstUser ? 'admin' : 'user']
+        [auth0Id, email, isFirstUser ? 'admin' : 'user', isFirstUser]
       );
 
       await activatePendingShares(result.rows[0].id, email);
