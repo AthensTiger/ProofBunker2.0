@@ -38,8 +38,8 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-2">
-            <NavLink to="/bunker" className="text-white text-xl font-bold tracking-tight">
-              Proof Bunker
+            <NavLink to="/bunker" className="flex items-center">
+              <img src="/logo.png" alt="Proof Bunker" className="h-10 w-10 object-contain" />
             </NavLink>
             <div className="hidden md:flex items-center ml-8 gap-1">
               {navLinks.map((link) => (

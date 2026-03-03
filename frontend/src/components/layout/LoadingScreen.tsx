@@ -1,9 +1,9 @@
 export default function LoadingScreen() {
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-amber-900 via-amber-800 to-amber-950">
       <div className="text-center">
-        <div className="inline-block w-8 h-8 border-4 border-amber-600 border-t-transparent rounded-full animate-spin" />
-        <p className="mt-4 text-gray-600">Loading...</p>
+        <img src="/logo.png" alt="Proof Bunker" className="w-40 h-40 object-contain mx-auto mb-6 opacity-90" />
+        <div className="inline-block w-6 h-6 border-2 border-amber-300 border-t-transparent rounded-full animate-spin" />
       </div>
     </div>
   );
