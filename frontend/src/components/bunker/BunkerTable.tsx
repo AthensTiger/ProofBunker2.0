@@ -6,10 +6,9 @@ import Badge from '../ui/Badge';
 interface BunkerTableProps {
   items: BunkerListItem[];
   showImages: boolean;
-  onDelete: (item: BunkerListItem) => void;
 }
 
-export default function BunkerTable({ items, showImages, onDelete }: BunkerTableProps) {
+export default function BunkerTable({ items, showImages }: BunkerTableProps) {
   const navigate = useNavigate();
 
   return (
@@ -26,7 +25,6 @@ export default function BunkerTable({ items, showImages, onDelete }: BunkerTable
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Qty</th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden lg:table-cell">Locations</th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">Status</th>
-            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase w-20">Actions</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">
@@ -68,14 +66,6 @@ export default function BunkerTable({ items, showImages, onDelete }: BunkerTable
               </td>
               <td className="px-4 py-3 text-sm text-gray-600 hidden md:table-cell capitalize">
                 {item.statuses.length > 0 ? item.statuses.join(', ') : '--'}
-              </td>
-              <td className="px-4 py-3 text-right">
-                <button
-                  onClick={(e) => { e.stopPropagation(); onDelete(item); }}
-                  className="text-red-500 hover:text-red-700 text-sm font-medium"
-                >
-                  Delete
-                </button>
               </td>
             </tr>
           ))}

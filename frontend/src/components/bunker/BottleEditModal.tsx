@@ -10,9 +10,10 @@ interface BottleEditModalProps {
   bottle: BunkerBottle | null;
   locations: StorageLocation[];
   onClose: () => void;
+  onDelete?: () => void;
 }
 
-export default function BottleEditModal({ bottle, locations, onClose }: BottleEditModalProps) {
+export default function BottleEditModal({ bottle, locations, onClose, onDelete }: BottleEditModalProps) {
   const addToast = useUIStore((s) => s.addToast);
   const updateMutation = useUpdateBottle();
 
@@ -127,20 +128,30 @@ export default function BottleEditModal({ bottle, locations, onClose }: BottleEd
         </div>
       </div>
 
-      <div className="flex justify-end gap-3 mt-6">
-        <button
-          onClick={onClose}
-          className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={handleSave}
-          disabled={updateMutation.isPending}
-          className="px-4 py-2 text-sm font-medium text-white bg-amber-700 hover:bg-amber-800 rounded-lg transition-colors disabled:opacity-50"
-        >
-          {updateMutation.isPending ? 'Saving...' : 'Save'}
-        </button>
+      <div className="flex items-center justify-between mt-6">
+        {onDelete ? (
+          <button
+            onClick={onDelete}
+            className="px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+          >
+            Delete Bottle
+          </button>
+        ) : <div />}
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={updateMutation.isPending}
+            className="px-4 py-2 text-sm font-medium text-white bg-amber-700 hover:bg-amber-800 rounded-lg transition-colors disabled:opacity-50"
+          >
+            {updateMutation.isPending ? 'Saving...' : 'Save'}
+          </button>
+        </div>
       </div>
     </Dialog>
   );

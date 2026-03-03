@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { BunkerBottle } from '../../types/bunker';
 import type { StorageLocation } from '../../types/location';
-import { useDeleteBottle, useAddToBunker } from '../../hooks/useBunker';
+import { useDeleteBottle, useUpdateBottle, useAddToBunker } from '../../hooks/useBunker';
 import { useUIStore } from '../../stores/uiStore';
 import PhotoGallery from './PhotoGallery';
 import PhotoUpload from './PhotoUpload';
@@ -17,9 +17,32 @@ interface BottlesTableProps {
 export default function BottlesTable({ bottles, locations, productId }: BottlesTableProps) {
   const addToast = useUIStore((s) => s.addToast);
   const deleteMutation = useDeleteBottle();
+  const updateMutation = useUpdateBottle();
   const addMutation = useAddToBunker();
   const [editBottle, setEditBottle] = useState<BunkerBottle | null>(null);
   const [deleteBottle, setDeleteBottle] = useState<BunkerBottle | null>(null);
+
+  const handleQuickAction = (bottle: BunkerBottle) => {
+    if (bottle.status === 'sealed') {
+      updateMutation.mutate(
+        { bottleId: bottle.id, status: 'opened' },
+        {
+          onSuccess: () => addToast('success', 'Bottle marked as opened'),
+          onError: () => addToast('error', 'Failed to update status'),
+        }
+      );
+    } else if (bottle.status === 'opened') {
+      updateMutation.mutate(
+        { bottleId: bottle.id, status: 'empty' },
+        {
+          onSuccess: () => addToast('success', 'Bottle marked as empty'),
+          onError: () => addToast('error', 'Failed to update status'),
+        }
+      );
+    } else {
+      setDeleteBottle(bottle);
+    }
+  };
 
   const handleDeleteBottle = () => {
     if (!deleteBottle) return;
@@ -88,10 +111,15 @@ export default function BottlesTable({ bottles, locations, productId }: BottlesT
                   Edit
                 </button>
                 <button
-                  onClick={() => setDeleteBottle(bottle)}
-                  className="text-sm text-red-500 hover:text-red-700 font-medium"
+                  onClick={() => handleQuickAction(bottle)}
+                  disabled={updateMutation.isPending}
+                  className={`text-sm font-medium disabled:opacity-50 ${
+                    bottle.status === 'empty'
+                      ? 'text-red-500 hover:text-red-700'
+                      : 'text-amber-700 hover:text-amber-800'
+                  }`}
                 >
-                  Delete
+                  {bottle.status === 'sealed' ? 'Open' : bottle.status === 'opened' ? 'Empty' : 'Delete'}
                 </button>
               </div>
             </div>
@@ -108,6 +136,7 @@ export default function BottlesTable({ bottles, locations, productId }: BottlesT
         bottle={editBottle}
         locations={locations}
         onClose={() => setEditBottle(null)}
+        onDelete={editBottle ? () => { setDeleteBottle(editBottle); setEditBottle(null); } : undefined}
       />
 
       <Dialog
