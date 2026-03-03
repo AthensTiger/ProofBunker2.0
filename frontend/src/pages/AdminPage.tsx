@@ -19,9 +19,10 @@ import AllDistillersTab from '../components/admin/AllDistillersTab';
 import AllUsersTab from '../components/admin/AllUsersTab';
 import SupportTicketsTab from '../components/support/SupportTicketsTab';
 import PostsApprovalTab from '../components/admin/PostsApprovalTab';
+import ReleaseNotesTab from '../components/admin/ReleaseNotesTab';
 import type { CompanyAutocompleteResult, DistillerAutocompleteResult } from '../types/product';
 
-type Tab = 'pending-products' | 'all-products' | 'unverified-companies' | 'all-companies' | 'unverified-distillers' | 'all-distillers' | 'users' | 'support-tickets' | 'posts-approval';
+type Tab = 'pending-products' | 'all-products' | 'unverified-companies' | 'all-companies' | 'unverified-distillers' | 'all-distillers' | 'users' | 'support-tickets' | 'posts-approval' | 'release-notes';
 
 const TABS: [Tab, string][] = [
   ['pending-products', 'Pending Products'],
@@ -33,6 +34,7 @@ const TABS: [Tab, string][] = [
   ['users', 'Users'],
   ['support-tickets', 'Support Tickets'],
   ['posts-approval', 'Posts Approval'],
+  ['release-notes', 'Release Notes'],
 ];
 
 export default function AdminPage() {
@@ -70,6 +72,7 @@ export default function AdminPage() {
       {tab === 'users' && <AllUsersTab />}
       {tab === 'support-tickets' && <SupportTicketsTab />}
       {tab === 'posts-approval' && <PostsApprovalTab />}
+      {tab === 'release-notes' && <ReleaseNotesTab />}
     </div>
   );
 }

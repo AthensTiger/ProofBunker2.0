@@ -2,10 +2,13 @@ import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useCurrentUser } from '../../hooks/useUser';
+import { useUnreadReleaseNotesCount } from '../../hooks/useReleaseNotes';
 
 export default function Navbar() {
   const { user, logout } = useAuth0();
   const { data: profile } = useCurrentUser();
+  const { data: unreadData } = useUnreadReleaseNotesCount();
+  const unreadCount = unreadData?.count ?? 0;
   const [mobileOpen, setMobileOpen] = useState(false);
   const isAdmin = profile?.role === 'admin' || profile?.role === 'curator';
 
@@ -29,6 +32,7 @@ export default function Navbar() {
     { to: '/shared', label: 'Shared With Me' },
     ...(profile?.features?.posts ? [{ to: '/posts', label: 'Posts' }] : []),
     ...(profile?.features?.messages ? [{ to: '/messages', label: 'Messages' }] : []),
+    { to: '/whats-new', label: "What's New" },
     { to: '/support', label: 'Support' },
     ...(isAdmin ? [{ to: '/admin', label: 'Admin' }] : []),
   ];
@@ -44,7 +48,14 @@ export default function Navbar() {
             <div className="hidden md:flex items-center ml-8 gap-1">
               {navLinks.map((link) => (
                 <NavLink key={link.to} to={link.to} className={linkClass} end={link.end}>
-                  {link.label}
+                  <span className="relative inline-flex items-center gap-1">
+                    {link.label}
+                    {link.to === '/whats-new' && unreadCount > 0 && (
+                      <span className="inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-red-500 rounded-full leading-none">
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </span>
+                    )}
+                  </span>
                 </NavLink>
               ))}
             </div>
@@ -110,7 +121,14 @@ export default function Navbar() {
               end={link.end}
               onClick={() => setMobileOpen(false)}
             >
-              {link.label}
+              <span className="relative inline-flex items-center gap-1">
+                {link.label}
+                {link.to === '/whats-new' && unreadCount > 0 && (
+                  <span className="inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-red-500 rounded-full leading-none">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </span>
             </NavLink>
           ))}
           <NavLink

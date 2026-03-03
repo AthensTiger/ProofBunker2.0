@@ -135,3 +135,24 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS features JSONB NOT NULL DEFAULT '{"me
 -- ================================================================
 ALTER TABLE users ADD COLUMN IF NOT EXISTS logo_url VARCHAR(1000);
 ALTER TABLE user_storage_locations ADD COLUMN IF NOT EXISTS logo_url VARCHAR(1000);
+
+-- ================================================================
+-- Release Notes / What's New
+-- Admin-authored changelog entries shown to all users.
+-- last_release_notes_viewed_at tracks per-user read position.
+-- ================================================================
+
+CREATE TABLE IF NOT EXISTS release_notes (
+  id SERIAL PRIMARY KEY,
+  title TEXT NOT NULL,
+  body TEXT NOT NULL,
+  type VARCHAR(20) NOT NULL DEFAULT 'enhancement'
+    CHECK (type IN ('bug_fix', 'enhancement', 'new_feature', 'other')),
+  version VARCHAR(20),
+  published BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_release_notes_created ON release_notes(created_at DESC);
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS last_release_notes_viewed_at TIMESTAMPTZ;

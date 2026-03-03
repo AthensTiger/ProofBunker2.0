@@ -17,6 +17,7 @@ import SupportPage from './pages/SupportPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
 import MessagesPage from './pages/MessagesPage';
 import PostsPage from './pages/PostsPage';
+import ReleaseNotesPage from './pages/ReleaseNotesPage';
 
 const router = createBrowserRouter([
   {
@@ -38,6 +39,7 @@ const router = createBrowserRouter([
       { path: 'support', element: <SupportPage /> },
       { path: 'messages', element: <MessagesPage /> },
       { path: 'posts', element: <PostsPage /> },
+      { path: 'whats-new', element: <ReleaseNotesPage /> },
     ],
   },
   { path: '/login', element: <LoginPage /> },
