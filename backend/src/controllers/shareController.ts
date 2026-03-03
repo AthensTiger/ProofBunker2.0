@@ -136,11 +136,11 @@ export async function getSharedBunkers(req: Request, res: Response, next: NextFu
 
     const result = await pool.query(
       `SELECT bs.id, bs.owner_user_id, bs.visibility, bs.created_at,
-              u.display_name AS owner_name, u.avatar_url AS owner_avatar
+              COALESCE(u.display_name, u.email) AS owner_name, u.avatar_url AS owner_avatar
        FROM bunker_shares bs
        JOIN users u ON u.id = bs.owner_user_id
        WHERE bs.shared_with_user_id = $1 AND bs.status = 'active'
-       ORDER BY u.display_name ASC`,
+       ORDER BY COALESCE(u.display_name, u.email) ASC`,
       [userId]
     );
 
