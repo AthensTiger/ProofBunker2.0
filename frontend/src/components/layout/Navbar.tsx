@@ -25,7 +25,7 @@ export default function Navbar() {
 
   const navLinks = [
     { to: '/bunker', label: 'My Bunker', end: true },
-    { to: '/menus', label: 'Menu Builder' },
+    { to: '/menus', label: 'Print Bunker' },
     { to: '/shared', label: 'Shared With Me' },
     { to: '/settings', label: 'Settings' },
     { to: '/messages', label: 'Messages' },
