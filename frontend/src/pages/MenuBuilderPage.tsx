@@ -62,6 +62,10 @@ export default function MenuBuilderPage() {
         </button>
       </div>
 
+      <p className="text-sm text-gray-600 mb-6">
+        Print Bunker lets you create a formatted list of bottles from your collection — similar to a wine or cocktail list you'd find on a restaurant menu. Choose which bottles to include, customise the layout, then print or save as a PDF.
+      </p>
+
       {templates.length === 0 ? (
         <div className="text-center py-20">
           <div className="text-6xl mb-4">&#128196;</div>
