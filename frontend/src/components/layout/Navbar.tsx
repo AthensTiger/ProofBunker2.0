@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useCurrentUser } from '../../hooks/useUser';
 import { useUnreadReleaseNotesCount } from '../../hooks/useReleaseNotes';
@@ -9,6 +9,7 @@ export default function Navbar() {
   const { data: profile } = useCurrentUser();
   const { data: unreadData } = useUnreadReleaseNotesCount();
   const unreadCount = unreadData?.count ?? 0;
+  const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const isAdmin = profile?.role === 'admin' || profile?.role === 'curator';
 
@@ -32,7 +33,6 @@ export default function Navbar() {
     { to: '/shared', label: 'Shared With Me' },
     ...(profile?.features?.posts ? [{ to: '/posts', label: 'Posts' }] : []),
     ...(profile?.features?.messages ? [{ to: '/messages', label: 'Messages' }] : []),
-    { to: '/whats-new', label: "What's New" },
     { to: '/support', label: 'Support' },
     ...(isAdmin ? [{ to: '/admin', label: 'Admin' }] : []),
   ];
@@ -48,19 +48,25 @@ export default function Navbar() {
             <div className="hidden md:flex items-center ml-8 gap-1">
               {navLinks.map((link) => (
                 <NavLink key={link.to} to={link.to} className={linkClass} end={link.end}>
-                  <span className="relative inline-flex items-center gap-1">
-                    {link.label}
-                    {link.to === '/whats-new' && unreadCount > 0 && (
-                      <span className="inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-red-500 rounded-full leading-none">
-                        {unreadCount > 9 ? '9+' : unreadCount}
-                      </span>
-                    )}
-                  </span>
+                  {link.label}
                 </NavLink>
               ))}
             </div>
           </div>
           <div className="flex items-center gap-3">
+            {/* What's New icon */}
+            <button
+              onClick={() => navigate('/whats-new')}
+              title="What's New"
+              className="relative p-1 rounded-md text-amber-200 hover:text-white hover:bg-amber-700/50 transition-colors"
+            >
+              <img src="/whats-new.png" alt="What's New" className="w-7 h-7 object-contain" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-red-500 rounded-full leading-none">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </button>
             {/* Settings gear icon */}
             <NavLink
               to="/settings"
@@ -121,16 +127,24 @@ export default function Navbar() {
               end={link.end}
               onClick={() => setMobileOpen(false)}
             >
-              <span className="relative inline-flex items-center gap-1">
-                {link.label}
-                {link.to === '/whats-new' && unreadCount > 0 && (
-                  <span className="inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-red-500 rounded-full leading-none">
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </span>
-                )}
-              </span>
+              {link.label}
             </NavLink>
           ))}
+          <NavLink
+            to="/whats-new"
+            className={mobileLinkClass}
+            onClick={() => setMobileOpen(false)}
+          >
+            <span className="inline-flex items-center gap-2">
+              <img src="/whats-new.png" alt="" className="w-5 h-5 object-contain" />
+              What's New
+              {unreadCount > 0 && (
+                <span className="inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-red-500 rounded-full leading-none">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </span>
+          </NavLink>
           <NavLink
             to="/settings"
             className={mobileLinkClass}
