@@ -14,6 +14,8 @@ interface BottlesTableProps {
   productId: number;
 }
 
+const STATUS_ORDER: Record<string, number> = { sealed: 0, opened: 1, empty: 2 };
+
 export default function BottlesTable({ bottles, locations, productId }: BottlesTableProps) {
   const addToast = useUIStore((s) => s.addToast);
   const deleteMutation = useDeleteBottle();
@@ -81,7 +83,12 @@ export default function BottlesTable({ bottles, locations, productId }: BottlesT
       </div>
 
       <div className="space-y-4">
-        {bottles.map((bottle, idx) => (
+        {[...bottles].sort((a, b) => {
+          const locA = a.location_name || '';
+          const locB = b.location_name || '';
+          if (locA !== locB) return locA.localeCompare(locB);
+          return (STATUS_ORDER[a.status] ?? 3) - (STATUS_ORDER[b.status] ?? 3);
+        }).map((bottle, idx) => (
           <div
             key={bottle.id}
             className="border border-gray-200 rounded-lg p-4"

@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useBunkerList, useUpdateBottle, useRemoveBunkerItem } from '../hooks/useBunker';
+import { useBunkerList, useUpdateBottle, useUpdateBunkerItem, useRemoveBunkerItem } from '../hooks/useBunker';
 import { useLocations } from '../hooks/useLocations';
 import { useSpiritTypes } from '../hooks/useProducts';
 import { useUIStore } from '../stores/uiStore';
@@ -48,6 +48,7 @@ export default function BunkerListPage() {
   const { data: locations = [] } = useLocations();
   const { data: spiritTypes = [] } = useSpiritTypes();
   const updateMutation = useUpdateBottle();
+  const updateItemMutation = useUpdateBunkerItem();
   const removeMutation = useRemoveBunkerItem();
 
   const handleStatusAction = (bottleId: number, newStatus: 'opened' | 'empty') => {
@@ -58,6 +59,10 @@ export default function BunkerListPage() {
         onError: () => addToast('error', 'Failed to update status'),
       }
     );
+  };
+
+  const handleRatingChange = (itemId: number, rating: number | null) => {
+    updateItemMutation.mutate({ id: itemId, personal_rating: rating });
   };
 
   const handleDelete = () => {
@@ -124,6 +129,7 @@ export default function BunkerListPage() {
               showImages={showImages}
               onStatusAction={handleStatusAction}
               onDelete={setDeleteTarget}
+              onRatingChange={handleRatingChange}
             />
           )}
         </>

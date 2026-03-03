@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import type { BunkerListItem } from '../../types/bunker';
-import StarRating from '../ui/StarRating';
+import StarRatingInput from '../ui/StarRatingInput';
 import Badge from '../ui/Badge';
 
 interface BunkerTableProps {
@@ -8,9 +8,10 @@ interface BunkerTableProps {
   showImages: boolean;
   onStatusAction: (bottleId: number, newStatus: 'opened' | 'empty') => void;
   onDelete: (item: BunkerListItem) => void;
+  onRatingChange: (itemId: number, rating: number | null) => void;
 }
 
-export default function BunkerTable({ items, showImages, onStatusAction, onDelete }: BunkerTableProps) {
+export default function BunkerTable({ items, showImages, onStatusAction, onDelete, onRatingChange }: BunkerTableProps) {
   const navigate = useNavigate();
 
   return (
@@ -62,7 +63,9 @@ export default function BunkerTable({ items, showImages, onStatusAction, onDelet
                   : item.spirit_type}
               </td>
               <td className="px-4 py-3 text-sm text-gray-600 hidden sm:table-cell">{item.abv != null ? `${Number(item.abv).toFixed(3)}%` : '--'}</td>
-              <td className="px-4 py-3"><StarRating rating={item.personal_rating} /></td>
+              <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                <StarRatingInput rating={item.personal_rating} onChange={(r) => onRatingChange(item.id, r)} size="sm" />
+              </td>
               <td className="px-4 py-3 text-sm text-gray-900 font-medium">{item.bottle_count}</td>
               <td className="px-4 py-3 text-sm text-gray-600 hidden lg:table-cell">
                 {item.location_names.length > 0 ? item.location_names.join(', ') : '--'}
