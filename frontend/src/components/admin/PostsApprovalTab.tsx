@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import DOMPurify from 'dompurify';
 import { usePendingPosts, useApprovePost, useRejectPost } from '../../hooks/usePosts';
 import type { UserPost } from '../../types/posts';
 
@@ -60,9 +61,10 @@ export default function PostsApprovalTab() {
 
           {expandedId === post.id && (
             <div className="mt-3 pt-3 border-t border-gray-100 space-y-3">
-              <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
-                {post.content}
-              </p>
+              <div
+                className="rich-text text-sm text-gray-700 leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }}
+              />
 
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1">

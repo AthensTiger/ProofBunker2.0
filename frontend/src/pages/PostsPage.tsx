@@ -27,10 +27,15 @@ const STATUS_COLORS: Record<UserPost['status'], string> = {
   public: 'bg-blue-100 text-blue-700',
 };
 
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, '');
+}
+
 export default function PostsPage() {
   const [tab, setTab] = useState<Tab>('community');
   const [showEditor, setShowEditor] = useState(false);
   const [editPost, setEditPost] = useState<UserPost | null>(null);
+  const [editorTitle, setEditorTitle] = useState('');
 
   const { data: publicPosts = [], isLoading: loadingPublic } = usePublicPosts();
   const { data: myPosts = [], isLoading: loadingMine } = useMyPosts();
@@ -39,14 +44,29 @@ export default function PostsPage() {
   const submitPost = useSubmitPost();
   const deletePost = useDeletePost();
 
+  const openNew = () => {
+    setEditPost(null);
+    setEditorTitle('');
+    setShowEditor(true);
+  };
+
+  const openEdit = (post: UserPost) => {
+    setEditPost(post);
+    setEditorTitle(post.title);
+    setShowEditor(true);
+  };
+
+  const closeEditor = () => {
+    setShowEditor(false);
+    setEditPost(null);
+    setEditorTitle('');
+  };
+
   const handleSave = (data: { title: string; content: string; product_id?: number | null }) => {
     if (editPost) {
-      updatePost.mutate(
-        { id: editPost.id, ...data },
-        { onSuccess: () => { setEditPost(null); } }
-      );
+      updatePost.mutate({ id: editPost.id, ...data }, { onSuccess: closeEditor });
     } else {
-      createPost.mutate(data, { onSuccess: () => { setShowEditor(false); } });
+      createPost.mutate(data, { onSuccess: closeEditor });
     }
   };
 
@@ -63,9 +83,9 @@ export default function PostsPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Community Posts</h1>
-        {tab === 'mine' && !showEditor && !editPost && (
+        {tab === 'mine' && !showEditor && (
           <button
-            onClick={() => setShowEditor(true)}
+            onClick={openNew}
             className="px-3 py-1.5 bg-amber-700 text-white text-sm font-medium rounded-lg hover:bg-amber-800 transition-colors"
           >
             New Post
@@ -79,7 +99,7 @@ export default function PostsPage() {
           {(['community', 'mine'] as Tab[]).map((t) => (
             <button
               key={t}
-              onClick={() => { setTab(t); setShowEditor(false); setEditPost(null); }}
+              onClick={() => { setTab(t); closeEditor(); }}
               className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors capitalize ${
                 tab === t
                   ? 'border-amber-700 text-amber-800'
@@ -114,11 +134,13 @@ export default function PostsPage() {
       {/* My posts */}
       {tab === 'mine' && (
         <div className="space-y-4">
-          {(showEditor || editPost) && (
+          {showEditor && (
             <PostEditor
               initial={editPost ?? undefined}
+              title={editorTitle}
+              onTitleChange={setEditorTitle}
               onSave={handleSave}
-              onCancel={() => { setShowEditor(false); setEditPost(null); }}
+              onCancel={closeEditor}
               isSaving={createPost.isPending || updatePost.isPending}
             />
           )}
@@ -146,18 +168,18 @@ export default function PostsPage() {
                       <p className="text-xs text-amber-700 font-medium mt-0.5">{post.product_name}</p>
                     )}
                     {post.last_decision === 'rejected' && post.last_notes && (
-                      <p className="text-xs text-red-600 mt-1">
-                        Rejected: {post.last_notes}
-                      </p>
+                      <p className="text-xs text-red-600 mt-1">Rejected: {post.last_notes}</p>
                     )}
-                    <p className="mt-2 text-sm text-gray-600 line-clamp-2">{post.content}</p>
+                    <p className="mt-2 text-sm text-gray-600 line-clamp-2">
+                      {stripHtml(post.content)}
+                    </p>
                   </div>
 
                   <div className="flex flex-col gap-1.5 shrink-0">
                     {post.status === 'draft' && (
                       <>
                         <button
-                          onClick={() => setEditPost(post)}
+                          onClick={() => openEdit(post)}
                           className="px-3 py-1 text-xs font-medium text-amber-700 hover:bg-amber-50 rounded-md border border-amber-200 transition-colors"
                         >
                           Edit
