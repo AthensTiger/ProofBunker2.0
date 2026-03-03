@@ -27,6 +27,6 @@ router.get('/tickets', getMyTickets);
 
 // Tickets (admin)
 router.get('/admin/tickets', requireRole('admin', 'curator'), getAdminTickets);
-router.patch('/admin/tickets/:id', requireRole('admin', 'curator'), updateTicketStatus);
+router.patch('/admin/tickets/:id', requireRole('admin'), updateTicketStatus);
 
 export default router;

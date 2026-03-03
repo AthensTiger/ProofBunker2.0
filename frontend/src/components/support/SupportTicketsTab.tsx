@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAdminTickets, useUpdateTicketStatus } from '../../hooks/useSupport';
+import { useCurrentUser } from '../../hooks/useUser';
 import type { SupportTicket } from '../../types/support';
 
 const TYPE_LABELS: Record<string, string> = {
@@ -23,7 +24,7 @@ const STATUS_STYLES: Record<string, string> = {
   closed: 'bg-gray-100 text-gray-600',
 };
 
-function TicketRow({ ticket }: { ticket: SupportTicket }) {
+function TicketRow({ ticket, canEdit }: { ticket: SupportTicket; canEdit: boolean }) {
   const [expanded, setExpanded] = useState(false);
   const updateMutation = useUpdateTicketStatus();
 
@@ -43,16 +44,22 @@ function TicketRow({ ticket }: { ticket: SupportTicket }) {
           )}
         </td>
         <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-          <select
-            value={ticket.status}
-            onChange={(e) => updateMutation.mutate({ id: ticket.id, status: e.target.value })}
-            className={`text-xs font-medium px-2 py-1 rounded-full border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-amber-500 ${STATUS_STYLES[ticket.status]}`}
-          >
-            <option value="open">Open</option>
-            <option value="in_progress">In Progress</option>
-            <option value="resolved">Resolved</option>
-            <option value="closed">Closed</option>
-          </select>
+          {canEdit ? (
+            <select
+              value={ticket.status}
+              onChange={(e) => updateMutation.mutate({ id: ticket.id, status: e.target.value })}
+              className={`text-xs font-medium px-2 py-1 rounded-full border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-amber-500 ${STATUS_STYLES[ticket.status]}`}
+            >
+              <option value="open">Open</option>
+              <option value="in_progress">In Progress</option>
+              <option value="resolved">Resolved</option>
+              <option value="closed">Closed</option>
+            </select>
+          ) : (
+            <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${STATUS_STYLES[ticket.status]}`}>
+              {ticket.status.replace('_', ' ')}
+            </span>
+          )}
         </td>
         <td className="px-4 py-3 text-xs text-gray-500">{new Date(ticket.created_at).toLocaleDateString()}</td>
       </tr>
@@ -86,7 +93,9 @@ function TicketRow({ ticket }: { ticket: SupportTicket }) {
 
 export default function SupportTicketsTab() {
   const { data: tickets = [], isLoading } = useAdminTickets();
+  const { data: currentUser } = useCurrentUser();
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const canEdit = currentUser?.role === 'admin';
 
   const filtered = statusFilter === 'all' ? tickets : tickets.filter((t) => t.status === statusFilter);
 
@@ -130,7 +139,7 @@ export default function SupportTicketsTab() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {filtered.map((ticket) => <TicketRow key={ticket.id} ticket={ticket} />)}
+              {filtered.map((ticket) => <TicketRow key={ticket.id} ticket={ticket} canEdit={canEdit} />)}
             </tbody>
           </table>
         </div>
