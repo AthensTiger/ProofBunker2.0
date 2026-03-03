@@ -120,27 +120,34 @@ Rules:
 Search results:
 ${searchText}`;
 
-    const anthropicRes = await fetch(ANTHROPIC_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 1024,
-        messages: [
-          { role: 'user', content: userPrompt },
-        ],
-        system: systemPrompt,
-      }),
+    const anthropicBody = JSON.stringify({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 1024,
+      messages: [{ role: 'user', content: userPrompt }],
+      system: systemPrompt,
     });
+
+    const anthropicHeaders = {
+      'Content-Type': 'application/json',
+      'x-api-key': ANTHROPIC_API_KEY,
+      'anthropic-version': '2023-06-01',
+    };
+
+    let anthropicRes = await fetch(ANTHROPIC_API_URL, { method: 'POST', headers: anthropicHeaders, body: anthropicBody });
+
+    // Single retry on transient overload (529)
+    if (anthropicRes.status === 529) {
+      await new Promise((r) => setTimeout(r, 2000));
+      anthropicRes = await fetch(ANTHROPIC_API_URL, { method: 'POST', headers: anthropicHeaders, body: anthropicBody });
+    }
 
     if (!anthropicRes.ok) {
       const errText = await anthropicRes.text();
       console.error('Anthropic API error:', anthropicRes.status, errText);
-      res.status(502).json({ error: 'AI extraction failed. Please try again later.' });
+      const userMsg = anthropicRes.status === 529
+        ? 'Research service is temporarily busy. Please try again in a moment.'
+        : 'AI extraction failed. Please try again later.';
+      res.status(502).json({ error: userMsg });
       return;
     }
 
