@@ -1,5 +1,4 @@
 import { useState, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import { useBunkerList, useUpdateBottle, useRemoveBunkerItem } from '../hooks/useBunker';
 import { useLocations } from '../hooks/useLocations';
 import { useSpiritTypes } from '../hooks/useProducts';
@@ -10,48 +9,38 @@ import BunkerActionRow from '../components/bunker/BunkerActionRow';
 import BunkerTable from '../components/bunker/BunkerTable';
 import BunkerEmptyState from '../components/bunker/BunkerEmptyState';
 
+const FILTERS_KEY = 'pb_bunker_filters';
+const IMAGES_KEY = 'pb_bunker_show_images';
+
+function loadFilters(): BunkerFilters {
+  try {
+    const stored = localStorage.getItem(FILTERS_KEY);
+    if (stored) return JSON.parse(stored);
+  } catch {}
+  return { sort_by: 'name', sort_dir: 'asc' };
+}
+
 export default function BunkerListPage() {
   const addToast = useUIStore((s) => s.addToast);
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchText, setSearchText] = useState('');
+  const [showImages, setShowImages] = useState(() => localStorage.getItem(IMAGES_KEY) === '1');
+  const [filters, setFilters] = useState<BunkerFilters>(loadFilters);
   const [deleteTarget, setDeleteTarget] = useState<BunkerListItem | null>(null);
 
-  // All filter/display state derived from URL search params
-  const searchText = searchParams.get('q') || '';
-  const showImages = searchParams.get('images') === '1';
-  const filters: BunkerFilters = {
-    spirit_type: searchParams.get('spirit_type') || undefined,
-    location_id: searchParams.get('location_id') ? Number(searchParams.get('location_id')) : undefined,
-    statuses: searchParams.get('statuses')
-      ? (searchParams.get('statuses')!.split(',') as ('sealed' | 'opened' | 'empty')[])
-      : undefined,
-    sort_by: searchParams.get('sort_by') || 'name',
-    sort_dir: (searchParams.get('sort_dir') as 'asc' | 'desc') || 'asc',
-  };
-
-  const updateParams = (updates: Record<string, string | undefined>) => {
-    setSearchParams(
-      (prev) => {
-        const next = new URLSearchParams(prev);
-        for (const [key, val] of Object.entries(updates)) {
-          if (val !== undefined && val !== '') next.set(key, val);
-          else next.delete(key);
-        }
-        return next;
-      },
-      { replace: true }
-    );
-  };
-
-  const handleSearchChange = (text: string) => updateParams({ q: text || undefined });
-  const handleToggleImages = () => updateParams({ images: showImages ? undefined : '1' });
   const handleFilterChange = (partial: Partial<BunkerFilters>) => {
-    const next = { ...filters, ...partial };
-    updateParams({
-      spirit_type: next.spirit_type,
-      location_id: next.location_id != null ? String(next.location_id) : undefined,
-      statuses: next.statuses?.length ? next.statuses.join(',') : undefined,
-      sort_by: next.sort_by !== 'name' ? next.sort_by : undefined,
-      sort_dir: next.sort_dir !== 'asc' ? next.sort_dir : undefined,
+    setFilters((prev) => {
+      const next = { ...prev, ...partial };
+      localStorage.setItem(FILTERS_KEY, JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const handleToggleImages = () => {
+    setShowImages((prev) => {
+      const next = !prev;
+      if (next) localStorage.setItem(IMAGES_KEY, '1');
+      else localStorage.removeItem(IMAGES_KEY);
+      return next;
     });
   };
 
@@ -116,7 +105,7 @@ export default function BunkerListPage() {
         <>
           <BunkerActionRow
             searchText={searchText}
-            onSearchChange={handleSearchChange}
+            onSearchChange={setSearchText}
             filters={filters}
             onFilterChange={handleFilterChange}
             showImages={showImages}
