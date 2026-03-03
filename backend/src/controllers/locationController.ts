@@ -29,6 +29,13 @@ export async function createLocation(req: Request, res: Response, next: NextFunc
       return;
     }
 
+    // Check if this is the user's first location
+    const countResult = await pool.query(
+      'SELECT COUNT(*) FROM user_storage_locations WHERE user_id = $1',
+      [userId]
+    );
+    const isFirstLocation = parseInt(countResult.rows[0].count) === 0;
+
     const result = await pool.query(
       `INSERT INTO user_storage_locations (user_id, name)
        VALUES ($1, $2)
@@ -36,7 +43,20 @@ export async function createLocation(req: Request, res: Response, next: NextFunc
       [userId, name.trim()]
     );
 
-    res.status(201).json(result.rows[0]);
+    const newLocation = result.rows[0];
+
+    // If this is the first location, migrate all existing unlocated bottles to it
+    if (isFirstLocation) {
+      await pool.query(
+        `UPDATE bunker_bottles
+         SET storage_location_id = $1
+         WHERE bunker_item_id IN (SELECT id FROM bunker_items WHERE user_id = $2)
+           AND storage_location_id IS NULL`,
+        [newLocation.id, userId]
+      );
+    }
+
+    res.status(201).json(newLocation);
   } catch (err: any) {
     if (err.code === '23505') {
       res.status(409).json({ error: 'A location with this name already exists' });
@@ -80,6 +100,19 @@ export async function deleteLocation(req: Request, res: Response, next: NextFunc
   try {
     const userId = req.user!.id;
     const { id } = req.params;
+
+    // Block deletion if any bottles are assigned to this location
+    const bottleCheck = await pool.query(
+      `SELECT COUNT(*) FROM bunker_bottles bb
+       JOIN bunker_items bi ON bi.id = bb.bunker_item_id
+       WHERE bi.user_id = $1 AND bb.storage_location_id = $2`,
+      [userId, id]
+    );
+
+    if (parseInt(bottleCheck.rows[0].count) > 0) {
+      res.status(400).json({ error: 'Cannot delete a location that has bottles assigned to it. Move the bottles to another location first.' });
+      return;
+    }
 
     const result = await pool.query(
       `DELETE FROM user_storage_locations

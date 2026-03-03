@@ -10,7 +10,14 @@ interface BottleDetailsFormProps {
 }
 
 export default function BottleDetailsForm({ locations, onSubmit, onCancel, isPending, productName }: BottleDetailsFormProps) {
-  const [locationId, setLocationId] = useState<number | undefined>();
+  const [locationId, setLocationId] = useState<number | undefined>(() => {
+    const saved = localStorage.getItem('pb_last_location_id');
+    const savedId = saved ? Number(saved) : undefined;
+    const savedExists = savedId != null && locations.some((l) => l.id === savedId);
+    if (savedExists) return savedId;
+    if (locations.length > 0) return locations[0].id;
+    return undefined;
+  });
   const [status, setStatus] = useState('sealed');
   const [price, setPrice] = useState('');
 
@@ -34,10 +41,15 @@ export default function BottleDetailsForm({ locations, onSubmit, onCancel, isPen
           <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
           <select
             value={locationId ?? ''}
-            onChange={(e) => setLocationId(e.target.value ? Number(e.target.value) : undefined)}
+            onChange={(e) => {
+              const val = e.target.value ? Number(e.target.value) : undefined;
+              setLocationId(val);
+              if (val != null) localStorage.setItem('pb_last_location_id', String(val));
+              else localStorage.removeItem('pb_last_location_id');
+            }}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
           >
-            <option value="">No location</option>
+            {locations.length === 0 && <option value="">No location</option>}
             {locations.map((loc) => (
               <option key={loc.id} value={loc.id}>{loc.name}</option>
             ))}

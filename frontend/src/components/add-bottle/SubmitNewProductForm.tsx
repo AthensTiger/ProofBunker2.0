@@ -57,7 +57,11 @@ export default function SubmitNewProductForm({ initialUpc, locations, onSubmit, 
   const [upc, setUpc] = useState(initialUpc || '');
   const [locationId, setLocationId] = useState<number | undefined>(() => {
     const saved = localStorage.getItem('pb_last_location_id');
-    return saved ? Number(saved) : undefined;
+    const savedId = saved ? Number(saved) : undefined;
+    const savedExists = savedId != null && locations.some((l) => l.id === savedId);
+    if (savedExists) return savedId;
+    if (locations.length > 0) return locations[0].id;
+    return undefined;
   });
   const [status, setStatus] = useState('sealed');
   const [price, setPrice] = useState('');
@@ -465,7 +469,7 @@ export default function SubmitNewProductForm({ initialUpc, locations, onSubmit, 
               if (val != null) localStorage.setItem('pb_last_location_id', String(val));
               else localStorage.removeItem('pb_last_location_id');
             }} className={`${inputCls} bg-white`}>
-              <option value="">No location</option>
+              {locations.length === 0 && <option value="">No location</option>}
               {locations.map((loc) => (
                 <option key={loc.id} value={loc.id}>{loc.name}</option>
               ))}

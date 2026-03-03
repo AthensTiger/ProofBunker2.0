@@ -71,7 +71,7 @@ export default function BunkerTable({ items, showImages, onStatusAction, onDelet
                 {item.statuses.length > 0 ? item.statuses.join(', ') : '--'}
               </td>
               <td className="px-4 py-3 text-right">
-                {item.bottle_count > 1 ? (
+                {(item.location_names.length > 1 || item.statuses.length > 1) ? (
                   <button
                     onClick={(e) => { e.stopPropagation(); navigate(`/bunker/${item.id}`); }}
                     className="text-sm font-medium text-amber-700 hover:text-amber-900"

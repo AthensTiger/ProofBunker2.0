@@ -23,14 +23,23 @@ export default function BottleEditModal({ bottle, locations, onClose, onDelete }
 
   useEffect(() => {
     if (bottle) {
-      const savedLocation = localStorage.getItem('pb_last_location_id');
-      setLocationId(
-        bottle.storage_location_id ?? (savedLocation ? Number(savedLocation) : undefined)
-      );
+      let loc: number | undefined;
+      if (bottle.storage_location_id != null) {
+        loc = bottle.storage_location_id;
+      } else if (locations.length > 0) {
+        const saved = localStorage.getItem('pb_last_location_id');
+        const savedId = saved ? Number(saved) : undefined;
+        const savedExists = savedId != null && locations.some((l) => l.id === savedId);
+        loc = savedExists ? savedId : locations[0].id;
+      } else {
+        const saved = localStorage.getItem('pb_last_location_id');
+        loc = saved ? Number(saved) : undefined;
+      }
+      setLocationId(loc);
       setStatus(bottle.status);
       setPrice(bottle.purchase_price != null ? String(bottle.purchase_price) : '');
     }
-  }, [bottle]);
+  }, [bottle, locations]);
 
   const handleLocationChange = (val: number | undefined) => {
     setLocationId(val);
@@ -68,7 +77,7 @@ export default function BottleEditModal({ bottle, locations, onClose, onDelete }
             onChange={(e) => handleLocationChange(e.target.value ? Number(e.target.value) : undefined)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
           >
-            <option value="">No location</option>
+            {locations.length === 0 && <option value="">No location</option>}
             {locations.map((loc) => (
               <option key={loc.id} value={loc.id}>{loc.name}</option>
             ))}

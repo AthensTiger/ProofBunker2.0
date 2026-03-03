@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useCurrentUser, useUpdateProfile } from '../hooks/useUser';
-import { useLocations, useCreateLocation, useDeleteLocation } from '../hooks/useLocations';
+import { useLocations, useCreateLocation, useUpdateLocation, useDeleteLocation } from '../hooks/useLocations';
 import { useMyShares, useCreateShare, useDeleteShare } from '../hooks/useShares';
 import { useUIStore } from '../stores/uiStore';
 import ExportDialog from '../components/export/ExportDialog';
@@ -15,12 +15,14 @@ export default function SettingsPage() {
   const { data: shares = [] } = useMyShares();
   const updateProfile = useUpdateProfile();
   const createLocation = useCreateLocation();
+  const updateLocation = useUpdateLocation();
   const deleteLocation = useDeleteLocation();
   const createShare = useCreateShare();
   const deleteShare = useDeleteShare();
 
   const [displayName, setDisplayName] = useState(user?.display_name || '');
   const [newLocationName, setNewLocationName] = useState('');
+  const [editingLocation, setEditingLocation] = useState<{ id: number; name: string } | null>(null);
   const [shareEmail, setShareEmail] = useState('');
   const [showExport, setShowExport] = useState(false);
 
@@ -42,15 +44,30 @@ export default function SettingsPage() {
         setNewLocationName('');
         addToast('success', 'Location added');
       },
-      onError: () => addToast('error', 'Failed to add location'),
+      onError: (err: any) => addToast('error', err?.message || 'Failed to add location'),
     });
   };
 
+  const handleSaveLocationName = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingLocation?.name.trim()) return;
+    updateLocation.mutate(
+      { id: editingLocation.id, name: editingLocation.name.trim() },
+      {
+        onSuccess: () => {
+          setEditingLocation(null);
+          addToast('success', 'Location renamed');
+        },
+        onError: (err: any) => addToast('error', err?.message || 'Failed to rename location'),
+      }
+    );
+  };
+
   const handleDeleteLocation = (id: number, name: string) => {
-    if (!confirm(`Delete location "${name}"? Bottles in this location will become unassigned.`)) return;
+    if (!confirm(`Delete location "${name}"?`)) return;
     deleteLocation.mutate(id, {
       onSuccess: () => addToast('success', `"${name}" deleted`),
-      onError: () => addToast('error', 'Failed to delete location'),
+      onError: (err: any) => addToast('error', err?.message || 'Failed to delete location'),
     });
   };
 
@@ -116,14 +133,48 @@ export default function SettingsPage() {
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Storage Locations <HelpTip text="Named spots where you physically keep bottles (e.g., 'Bar Cart', 'Basement Rack'). Create locations here, then assign bottles to them from the bunker view." position="right" /></h2>
         <div className="space-y-2 mb-4">
           {locations.map((loc) => (
-            <div key={loc.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
-              <span className="text-sm text-gray-900">{loc.name}</span>
-              <button
-                onClick={() => handleDeleteLocation(loc.id, loc.name)}
-                className="text-sm text-red-500 hover:text-red-700"
-              >
-                Delete
-              </button>
+            <div key={loc.id} className="flex items-center py-2 border-b border-gray-100 last:border-0 gap-2">
+              {editingLocation?.id === loc.id ? (
+                <form onSubmit={handleSaveLocationName} className="flex items-center gap-2 flex-1">
+                  <input
+                    type="text"
+                    value={editingLocation.name}
+                    onChange={(e) => setEditingLocation({ ...editingLocation, name: e.target.value })}
+                    autoFocus
+                    className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-amber-500"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!editingLocation.name.trim() || updateLocation.isPending}
+                    className="text-sm font-medium text-amber-700 hover:text-amber-800 disabled:opacity-50"
+                  >
+                    Save
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditingLocation(null)}
+                    className="text-sm text-gray-500 hover:text-gray-700"
+                  >
+                    Cancel
+                  </button>
+                </form>
+              ) : (
+                <>
+                  <span className="text-sm text-gray-900 flex-1">{loc.name}</span>
+                  <button
+                    onClick={() => setEditingLocation({ id: loc.id, name: loc.name })}
+                    className="text-sm text-amber-700 hover:text-amber-800"
+                  >
+                    Rename
+                  </button>
+                  <button
+                    onClick={() => handleDeleteLocation(loc.id, loc.name)}
+                    className="text-sm text-red-500 hover:text-red-700"
+                  >
+                    Delete
+                  </button>
+                </>
+              )}
             </div>
           ))}
           {locations.length === 0 && (
