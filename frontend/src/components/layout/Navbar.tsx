@@ -28,6 +28,7 @@ export default function Navbar() {
     { to: '/menus', label: 'Menu Builder' },
     { to: '/shared', label: 'Shared With Me' },
     { to: '/settings', label: 'Settings' },
+    { to: '/support', label: 'Support' },
     ...(isAdmin ? [{ to: '/admin', label: 'Admin' }] : []),
   ];
 

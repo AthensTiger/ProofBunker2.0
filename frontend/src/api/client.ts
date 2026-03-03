@@ -55,6 +55,13 @@ export class ApiClient {
     return this.request<void>(path, { method: 'DELETE' });
   }
 
+  patch<T>(path: string, body?: unknown): Promise<T> {
+    return this.request<T>(path, {
+      method: 'PATCH',
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  }
+
   async postFormData<T>(path: string, formData: FormData): Promise<T> {
     const token = await this.getToken();
     const response = await fetch(`${API_BASE_URL}${path}`, {

@@ -3,6 +3,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { useCurrentUser } from '../../hooks/useUser';
 import LoadingScreen from './LoadingScreen';
 import Navbar from './Navbar';
+import FloatingChat from '../support/FloatingChat';
 import ToastContainer from '../ui/ToastContainer';
 
 export default function ProtectedRoute() {
@@ -26,6 +27,7 @@ export default function ProtectedRoute() {
         <Outlet />
       </main>
       <ToastContainer />
+      <FloatingChat />
     </div>
   );
 }
