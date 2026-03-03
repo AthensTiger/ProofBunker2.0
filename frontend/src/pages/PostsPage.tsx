@@ -9,6 +9,7 @@ import {
 } from '../hooks/usePosts';
 import PostCard from '../components/posts/PostCard';
 import PostEditor from '../components/posts/PostEditor';
+import { useUIStore } from '../stores/uiStore';
 import type { UserPost } from '../types/posts';
 
 type Tab = 'community' | 'mine';
@@ -36,6 +37,7 @@ export default function PostsPage() {
   const [showEditor, setShowEditor] = useState(false);
   const [editPost, setEditPost] = useState<UserPost | null>(null);
   const [editorTitle, setEditorTitle] = useState('');
+  const addToast = useUIStore((s) => s.addToast);
 
   const { data: publicPosts = [], isLoading: loadingPublic } = usePublicPosts();
   const { data: myPosts = [], isLoading: loadingMine } = useMyPosts();
@@ -43,6 +45,8 @@ export default function PostsPage() {
   const updatePost = useUpdatePost();
   const submitPost = useSubmitPost();
   const deletePost = useDeletePost();
+
+  const draftCount = myPosts.filter((p) => p.status === 'draft').length;
 
   const openNew = () => {
     setEditPost(null);
@@ -64,19 +68,38 @@ export default function PostsPage() {
 
   const handleSave = (data: { title: string; content: string; product_id?: number | null }) => {
     if (editPost) {
-      updatePost.mutate({ id: editPost.id, ...data }, { onSuccess: closeEditor });
+      updatePost.mutate(
+        { id: editPost.id, ...data },
+        {
+          onSuccess: () => { closeEditor(); addToast('success', 'Draft updated'); },
+          onError: () => addToast('error', 'Failed to save draft'),
+        }
+      );
     } else {
-      createPost.mutate(data, { onSuccess: closeEditor });
+      createPost.mutate(data, {
+        onSuccess: () => {
+          closeEditor();
+          setTab('mine');
+          addToast('success', 'Draft saved — find it in My Posts');
+        },
+        onError: () => addToast('error', 'Failed to save draft'),
+      });
     }
   };
 
   const handleSubmit = (post: UserPost) => {
-    submitPost.mutate(post.id);
+    submitPost.mutate(post.id, {
+      onSuccess: () => addToast('success', 'Post submitted for review'),
+      onError: () => addToast('error', 'Failed to submit post'),
+    });
   };
 
   const handleDelete = (post: UserPost) => {
     if (!confirm(`Delete "${post.title}"?`)) return;
-    deletePost.mutate(post.id);
+    deletePost.mutate(post.id, {
+      onSuccess: () => addToast('success', 'Post deleted'),
+      onError: () => addToast('error', 'Failed to delete post'),
+    });
   };
 
   return (
@@ -106,7 +129,16 @@ export default function PostsPage() {
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
-              {t === 'community' ? 'Community' : 'My Posts'}
+              {t === 'community' ? 'Community' : (
+                <span className="flex items-center gap-1.5">
+                  My Posts
+                  {draftCount > 0 && (
+                    <span className="inline-flex items-center justify-center w-4 h-4 text-xs font-medium rounded-full bg-amber-700 text-white">
+                      {draftCount}
+                    </span>
+                  )}
+                </span>
+              )}
             </button>
           ))}
         </nav>

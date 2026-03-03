@@ -7,12 +7,13 @@ import FloatingChat from '../support/FloatingChat';
 import ToastContainer from '../ui/ToastContainer';
 
 export default function ProtectedRoute() {
-  const { isAuthenticated, isLoading: authLoading } = useAuth0();
+  const { isAuthenticated, isLoading: authLoading, error: authError } = useAuth0();
   const { data: user, isLoading: userLoading } = useCurrentUser();
 
   // Always check auth loading first to prevent flash (v1 lesson)
   if (authLoading) return <LoadingScreen />;
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  // If Auth0 errored (e.g. silent-auth iframe blocked) treat as logged out
+  if (authError || !isAuthenticated) return <Navigate to="/login" replace />;
 
   // Wait for user data to load before checking age
   if (userLoading) return <LoadingScreen />;

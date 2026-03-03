@@ -103,3 +103,17 @@ CREATE TABLE IF NOT EXISTS post_approvals (
   notes TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- ================================================================
+-- Notifications (required by Phase 1 messaging + Phase 2 posts)
+-- ================================================================
+
+CREATE TABLE IF NOT EXISTS notifications (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  type VARCHAR(40) NOT NULL,
+  payload JSONB NOT NULL DEFAULT '{}',
+  read_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, read_at);
