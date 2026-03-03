@@ -29,6 +29,7 @@ export default function Navbar() {
     { to: '/shared', label: 'Shared With Me' },
     { to: '/settings', label: 'Settings' },
     { to: '/messages', label: 'Messages' },
+    { to: '/posts', label: 'Posts' },
     { to: '/support', label: 'Support' },
     ...(isAdmin ? [{ to: '/admin', label: 'Admin' }] : []),
   ];

@@ -18,9 +18,10 @@ import AllCompaniesTab from '../components/admin/AllCompaniesTab';
 import AllDistillersTab from '../components/admin/AllDistillersTab';
 import AllUsersTab from '../components/admin/AllUsersTab';
 import SupportTicketsTab from '../components/support/SupportTicketsTab';
+import PostsApprovalTab from '../components/admin/PostsApprovalTab';
 import type { CompanyAutocompleteResult, DistillerAutocompleteResult } from '../types/product';
 
-type Tab = 'pending-products' | 'all-products' | 'unverified-companies' | 'all-companies' | 'unverified-distillers' | 'all-distillers' | 'users' | 'support-tickets';
+type Tab = 'pending-products' | 'all-products' | 'unverified-companies' | 'all-companies' | 'unverified-distillers' | 'all-distillers' | 'users' | 'support-tickets' | 'posts-approval';
 
 const TABS: [Tab, string][] = [
   ['pending-products', 'Pending Products'],
@@ -31,6 +32,7 @@ const TABS: [Tab, string][] = [
   ['all-distillers', 'All Distillers'],
   ['users', 'Users'],
   ['support-tickets', 'Support Tickets'],
+  ['posts-approval', 'Posts Approval'],
 ];
 
 export default function AdminPage() {
@@ -67,6 +69,7 @@ export default function AdminPage() {
       {tab === 'all-distillers' && <AllDistillersTab />}
       {tab === 'users' && <AllUsersTab />}
       {tab === 'support-tickets' && <SupportTicketsTab />}
+      {tab === 'posts-approval' && <PostsApprovalTab />}
     </div>
   );
 }

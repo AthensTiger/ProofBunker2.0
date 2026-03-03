@@ -16,6 +16,7 @@ import AdminPage from './pages/AdminPage';
 import SupportPage from './pages/SupportPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
 import MessagesPage from './pages/MessagesPage';
+import PostsPage from './pages/PostsPage';
 
 const router = createBrowserRouter([
   {
@@ -36,6 +37,7 @@ const router = createBrowserRouter([
       { path: 'admin', element: <AdminPage /> },
       { path: 'support', element: <SupportPage /> },
       { path: 'messages', element: <MessagesPage /> },
+      { path: 'posts', element: <PostsPage /> },
     ],
   },
   { path: '/login', element: <LoginPage /> },
