@@ -22,6 +22,12 @@ export interface MenuSettings {
   show_notes?: boolean;
   show_price?: boolean;
   show_logo?: boolean;
+  show_proof?: boolean;
+  show_batch_number?: boolean;
+  show_barrel_number?: boolean;
+  show_year_distilled?: boolean;
+  show_release_year?: boolean;
+  collapse_identical_bottles?: boolean;
   sort_by?: string;
 }
 
@@ -73,6 +79,12 @@ export interface MenuPreviewSection {
   msrp_usd: number | null;
   section_override: string | null;
   tasting_notes?: MenuPreviewTastingNote[];
+  // Per-bottle detail fields
+  batch_number: string | null;
+  barrel_number: string | null;
+  year_distilled: number | null;
+  release_year: number | null;
+  quantity: number;
 }
 
 export interface MenuPreviewData {

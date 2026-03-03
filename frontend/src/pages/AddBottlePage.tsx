@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAddToBunker } from '../hooks/useBunker';
 import { useLocations } from '../hooks/useLocations';
 import { useSubmitProduct } from '../hooks/useSubmissions';
@@ -16,16 +16,35 @@ type Step = 'search' | 'details' | 'submit-new';
 
 export default function AddBottlePage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const addToast = useUIStore((s) => s.addToast);
   const { data: locations = [] } = useLocations();
   const addMutation = useAddToBunker();
   const submitMutation = useSubmitProduct();
 
+  const locationState = location.state as { productId?: number; productName?: string; returnTo?: string } | null;
+  const preloadProductId = locationState?.productId ?? null;
+
   const [step, setStep] = useState<Step>('search');
   const [selectedProduct, setSelectedProduct] = useState<AutocompleteResult | UpcLookupResult | null>(null);
   const [unknownUpc, setUnknownUpc] = useState('');
 
-  const { data: productDetail } = useProductDetail(selectedProduct?.id ?? null);
+  // Load product detail for both normal selection and pre-selected product
+  const { data: productDetail } = useProductDetail(selectedProduct?.id ?? preloadProductId);
+
+  // When arriving with a pre-selected product, jump straight to the details step
+  useEffect(() => {
+    if (preloadProductId && productDetail && !selectedProduct) {
+      setSelectedProduct({
+        id: productDetail.id,
+        name: productDetail.name,
+        spirit_type: productDetail.spirit_type,
+        company_name: productDetail.company_name,
+        image_url: productDetail.image_url,
+      });
+      setStep('details');
+    }
+  }, [preloadProductId, productDetail, selectedProduct]);
 
   const handleProductSelect = (product: AutocompleteResult | UpcLookupResult) => {
     setSelectedProduct(product);
@@ -69,7 +88,7 @@ export default function AddBottlePage() {
       {
         onSuccess: (data) => {
           addToast('success', `"${selectedProduct.name}" added to bunker`);
-          navigate(`/bunker/${data.bunker_item_id}`);
+          navigate(locationState?.returnTo || `/bunker/${data.bunker_item_id}`);
         },
         onError: () => addToast('error', 'Failed to add bottle'),
       }
@@ -165,7 +184,10 @@ export default function AddBottlePage() {
           <BottleDetailsForm
             locations={locations}
             onSubmit={handleAddToBundle}
-            onCancel={() => { setStep('search'); setSelectedProduct(null); }}
+            onCancel={() => {
+              if (locationState?.returnTo) navigate(locationState.returnTo);
+              else { setStep('search'); setSelectedProduct(null); }
+            }}
             isPending={addMutation.isPending}
             productName={selectedProduct.name}
             productDetail={productDetail ?? null}

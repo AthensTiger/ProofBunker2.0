@@ -213,14 +213,20 @@ export default function MenuEditorPage() {
             <div className="space-y-2">
               {([
                 ['show_abv', 'Show ABV'],
-                ['show_company', 'Show Company'],
+                ['show_proof', 'Show Proof'],
                 ['show_age', 'Show Age Statement'],
+                ['show_company', 'Show Company'],
                 ['show_rating', 'Show Rating'],
                 ['show_description', 'Show Description'],
                 ['show_tasting_notes', 'Show Tasting Notes'],
                 ['show_mash_bill', 'Show Mash Bill'],
                 ['show_notes', 'Show Notes'],
                 ['show_price', 'Show Purchase Price'],
+                ['show_batch_number', 'Show Batch Number'],
+                ['show_barrel_number', 'Show Barrel Number'],
+                ['show_year_distilled', 'Show Year Distilled'],
+                ['show_release_year', 'Show Release Year'],
+                ['collapse_identical_bottles', 'Collapse Identical Bottles'],
                 ['show_logo', 'Show Logo Watermark'],
               ] as const).map(([key, label]) => (
                 <label key={key} className="flex items-center gap-2 text-sm cursor-pointer">

@@ -176,3 +176,18 @@ ALTER TABLE bunker_items ADD COLUMN IF NOT EXISTS proof          DOUBLE PRECISIO
 ALTER TABLE bunker_items ADD COLUMN IF NOT EXISTS abv            DECIMAL(5,4);
 ALTER TABLE bunker_items ADD COLUMN IF NOT EXISTS age_statement  VARCHAR(100);
 ALTER TABLE bunker_items ADD COLUMN IF NOT EXISTS mash_bill      VARCHAR(500);
+
+-- ================================================================
+-- Bunker Bottle — Per-Bottle Detail Fields (Option A)
+-- Details moved from bunker_items to bunker_bottles so each
+-- physical bottle carries its own independent values.
+-- COALESCE(bb.field, p.field) used for fields with product fallback.
+-- ================================================================
+ALTER TABLE bunker_bottles ADD COLUMN IF NOT EXISTS batch_number   VARCHAR(100);
+ALTER TABLE bunker_bottles ADD COLUMN IF NOT EXISTS barrel_number  VARCHAR(100);
+ALTER TABLE bunker_bottles ADD COLUMN IF NOT EXISTS year_distilled INTEGER;
+ALTER TABLE bunker_bottles ADD COLUMN IF NOT EXISTS release_year   INTEGER;
+ALTER TABLE bunker_bottles ADD COLUMN IF NOT EXISTS proof          DOUBLE PRECISION;
+ALTER TABLE bunker_bottles ADD COLUMN IF NOT EXISTS abv            DECIMAL(5,4);
+ALTER TABLE bunker_bottles ADD COLUMN IF NOT EXISTS age_statement  VARCHAR(100);
+ALTER TABLE bunker_bottles ADD COLUMN IF NOT EXISTS mash_bill      VARCHAR(500);

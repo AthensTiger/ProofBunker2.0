@@ -150,9 +150,24 @@ export async function getBunkerItem(req: Request, res: Response, next: NextFunct
       return;
     }
 
-    // Fetch bottles with photos
+    // Fetch bottles with photos + COALESCE detail values from product
     const bottlesResult = await pool.query(
-      `SELECT bb.*,
+      `SELECT
+              bb.id, bb.bunker_item_id, bb.storage_location_id, bb.status,
+              bb.purchase_price, bb.created_at, bb.updated_at,
+              -- raw bottle-level values (null = not set)
+              bb.batch_number, bb.barrel_number, bb.year_distilled,
+              bb.proof         AS override_proof,
+              bb.abv           AS override_abv,
+              bb.age_statement AS override_age_statement,
+              bb.mash_bill     AS override_mash_bill,
+              bb.release_year  AS override_release_year,
+              -- effective values (COALESCE bottle ?? product)
+              COALESCE(bb.proof,         p.proof)         AS proof,
+              COALESCE(bb.abv,           p.abv)           AS abv,
+              COALESCE(bb.age_statement, p.age_statement) AS age_statement,
+              COALESCE(bb.mash_bill,     p.mash_bill)     AS mash_bill,
+              COALESCE(bb.release_year,  p.release_year)  AS release_year,
               usl.name AS location_name,
               COALESCE(
                 json_agg(
@@ -161,10 +176,12 @@ export async function getBunkerItem(req: Request, res: Response, next: NextFunct
                 '[]'
               ) AS photos
        FROM bunker_bottles bb
+       JOIN bunker_items bi ON bi.id = bb.bunker_item_id
+       JOIN products p ON p.id = bi.product_id
        LEFT JOIN user_storage_locations usl ON usl.id = bb.storage_location_id
        LEFT JOIN bunker_bottle_photos bp ON bp.bunker_bottle_id = bb.id
        WHERE bb.bunker_item_id = $1
-       GROUP BY bb.id, usl.name
+       GROUP BY bb.id, p.proof, p.abv, p.age_statement, p.mash_bill, p.release_year, usl.name
        ORDER BY bb.created_at DESC`,
       [id]
     );
@@ -210,44 +227,34 @@ export async function addToBunker(req: Request, res: Response, next: NextFunctio
       );
       const bunkerItemId = itemResult.rows[0].id;
 
-      // Apply any bottle-specific override fields to the bunker_item
-      const ITEM_OVERRIDE_FIELDS: { key: string; col: string; numeric?: boolean }[] = [
-        { key: 'batch_number',   col: 'batch_number' },
-        { key: 'barrel_number',  col: 'barrel_number' },
-        { key: 'year_distilled', col: 'year_distilled', numeric: true },
-        { key: 'release_year',   col: 'release_year',   numeric: true },
-        { key: 'proof',          col: 'proof',          numeric: true },
-        { key: 'abv',            col: 'abv',            numeric: true },
-        { key: 'age_statement',  col: 'age_statement' },
-        { key: 'mash_bill',      col: 'mash_bill' },
+      // Extract per-bottle detail fields
+      const BOTTLE_DETAIL_FIELDS: { key: string; numeric?: boolean }[] = [
+        { key: 'batch_number' },
+        { key: 'barrel_number' },
+        { key: 'year_distilled', numeric: true },
+        { key: 'release_year',   numeric: true },
+        { key: 'proof',          numeric: true },
+        { key: 'abv',            numeric: true },
+        { key: 'age_statement' },
+        { key: 'mash_bill' },
       ];
-      const overrideUpdates: string[] = [];
-      const overrideValues: unknown[] = [];
-      let oidx = 1;
-      for (const field of ITEM_OVERRIDE_FIELDS) {
-        if (field.key in req.body && req.body[field.key] !== undefined && req.body[field.key] !== '') {
-          const raw = req.body[field.key];
-          const val = field.numeric ? (isNaN(Number(raw)) ? null : Number(raw)) : (String(raw).trim() || null);
-          if (val !== null) {
-            overrideUpdates.push(`${field.col} = $${oidx++}`);
-            overrideValues.push(val);
-          }
-        }
-      }
-      if (overrideUpdates.length > 0) {
-        overrideValues.push(bunkerItemId);
-        await client.query(
-          `UPDATE bunker_items SET ${overrideUpdates.join(', ')} WHERE id = $${oidx}`,
-          overrideValues
-        );
-      }
+      const detailValues: (string | number | null)[] = BOTTLE_DETAIL_FIELDS.map((f) => {
+        const raw = req.body[f.key];
+        if (raw === undefined || raw === null || raw === '') return null;
+        if (f.numeric) { const n = Number(raw); return isNaN(n) ? null : n; }
+        return String(raw).trim() || null;
+      });
 
-      // Create a bottle
+      // Create a bottle with all detail fields
       const bottleResult = await client.query(
-        `INSERT INTO bunker_bottles (bunker_item_id, storage_location_id, status, purchase_price)
-         VALUES ($1, $2, $3, $4)
+        `INSERT INTO bunker_bottles
+           (bunker_item_id, storage_location_id, status, purchase_price,
+            batch_number, barrel_number, year_distilled, release_year,
+            proof, abv, age_statement, mash_bill)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
          RETURNING *`,
-        [bunkerItemId, storage_location_id || null, status || 'sealed', purchase_price || null]
+        [bunkerItemId, storage_location_id || null, status || 'sealed', purchase_price || null,
+         ...detailValues]
       );
 
       await client.query('COMMIT');
@@ -286,33 +293,6 @@ export async function updateBunkerItem(req: Request, res: Response, next: NextFu
     if ('notes' in req.body) {
       updates.push(`notes = $${idx++}`);
       values.push(req.body.notes ?? null);
-    }
-
-    const OVERRIDE_FIELDS: { key: string; col: string; numeric?: boolean }[] = [
-      { key: 'batch_number',   col: 'batch_number' },
-      { key: 'barrel_number',  col: 'barrel_number' },
-      { key: 'year_distilled', col: 'year_distilled', numeric: true },
-      { key: 'release_year',   col: 'release_year',   numeric: true },
-      { key: 'proof',          col: 'proof',          numeric: true },
-      { key: 'abv',            col: 'abv',            numeric: true },
-      { key: 'age_statement',  col: 'age_statement' },
-      { key: 'mash_bill',      col: 'mash_bill' },
-    ];
-    for (const field of OVERRIDE_FIELDS) {
-      if (field.key in req.body) {
-        const raw = req.body[field.key];
-        let val: unknown;
-        if (raw === null || raw === '' || raw === undefined) {
-          val = null;
-        } else if (field.numeric) {
-          const n = Number(raw);
-          val = isNaN(n) ? null : n;
-        } else {
-          val = String(raw).trim() || null;
-        }
-        updates.push(`${field.col} = $${idx++}`);
-        values.push(val);
-      }
     }
 
     if (updates.length === 0) {
@@ -367,19 +347,57 @@ export async function updateBottle(req: Request, res: Response, next: NextFuncti
   try {
     const userId = req.user!.id;
     const { bottleId } = req.params;
-    const { storage_location_id, status, purchase_price } = req.body;
 
+    const BOTTLE_FIELDS: { key: string; col: string; numeric?: boolean }[] = [
+      { key: 'storage_location_id', col: 'storage_location_id', numeric: true },
+      { key: 'status',              col: 'status' },
+      { key: 'purchase_price',      col: 'purchase_price',      numeric: true },
+      { key: 'batch_number',        col: 'batch_number' },
+      { key: 'barrel_number',       col: 'barrel_number' },
+      { key: 'year_distilled',      col: 'year_distilled',      numeric: true },
+      { key: 'release_year',        col: 'release_year',        numeric: true },
+      { key: 'proof',               col: 'proof',               numeric: true },
+      { key: 'abv',                 col: 'abv',                 numeric: true },
+      { key: 'age_statement',       col: 'age_statement' },
+      { key: 'mash_bill',           col: 'mash_bill' },
+    ];
+
+    const updates: string[] = [];
+    const values: unknown[] = [];
+    let idx = 1;
+
+    for (const field of BOTTLE_FIELDS) {
+      if (field.key in req.body) {
+        const raw = req.body[field.key];
+        let val: unknown;
+        if (raw === null || raw === '' || raw === undefined) {
+          val = null;
+        } else if (field.numeric) {
+          const n = Number(raw);
+          val = isNaN(n) ? null : n;
+        } else {
+          val = String(raw).trim() || null;
+        }
+        updates.push(`${field.col} = $${idx++}`);
+        values.push(val);
+      }
+    }
+
+    if (updates.length === 0) {
+      res.status(400).json({ error: 'No fields to update' });
+      return;
+    }
+
+    values.push(bottleId, userId);
     const result = await pool.query(
       `UPDATE bunker_bottles bb
-       SET storage_location_id = COALESCE($1, bb.storage_location_id),
-           status = COALESCE($2, bb.status),
-           purchase_price = COALESCE($3, bb.purchase_price)
+       SET ${updates.join(', ')}
        FROM bunker_items bi
-       WHERE bb.id = $4
+       WHERE bb.id = $${idx++}
          AND bb.bunker_item_id = bi.id
-         AND bi.user_id = $5
+         AND bi.user_id = $${idx}
        RETURNING bb.*`,
-      [storage_location_id, status, purchase_price, bottleId, userId]
+      values
     );
 
     if (result.rows.length === 0) {

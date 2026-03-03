@@ -1,26 +1,50 @@
 import { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import type { BunkerBottle } from '../../types/bunker';
 import type { StorageLocation } from '../../types/location';
-import { useDeleteBottle, useUpdateBottle, useAddToBunker } from '../../hooks/useBunker';
+import { useDeleteBottle, useUpdateBottle } from '../../hooks/useBunker';
 import { useUIStore } from '../../stores/uiStore';
 import PhotoGallery from './PhotoGallery';
 import PhotoUpload from './PhotoUpload';
 import BottleEditModal from './BottleEditModal';
 import Dialog from '../ui/Dialog';
 
+interface ProductContext {
+  proof: number | null;
+  abv: number | null;
+  age_statement: string | null;
+  mash_bill: string | null;
+  release_year: number | null;
+}
+
 interface BottlesTableProps {
   bottles: BunkerBottle[];
   locations: StorageLocation[];
   productId: number;
+  productName?: string;
+  productContext?: ProductContext | null;
 }
 
 const STATUS_ORDER: Record<string, number> = { sealed: 0, opened: 1, empty: 2 };
 
-export default function BottlesTable({ bottles, locations, productId }: BottlesTableProps) {
+function formatBottleDetails(bottle: BunkerBottle): string {
+  const parts: string[] = [];
+  if (bottle.batch_number) parts.push(`Batch: ${bottle.batch_number}`);
+  if (bottle.barrel_number) parts.push(`Barrel: ${bottle.barrel_number}`);
+  if (bottle.year_distilled != null) parts.push(`Dist. ${bottle.year_distilled}`);
+  if (bottle.override_proof != null) parts.push(`${bottle.override_proof}pf`);
+  else if (bottle.override_abv != null) parts.push(`${parseFloat((Number(bottle.override_abv) * 100).toFixed(1))}% ABV`);
+  if (bottle.override_age_statement) parts.push(bottle.override_age_statement);
+  if (bottle.override_release_year != null) parts.push(`Rel. ${bottle.override_release_year}`);
+  return parts.join(' · ');
+}
+
+export default function BottlesTable({ bottles, locations, productId, productName, productContext }: BottlesTableProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
   const addToast = useUIStore((s) => s.addToast);
   const deleteMutation = useDeleteBottle();
   const updateMutation = useUpdateBottle();
-  const addMutation = useAddToBunker();
   const [editBottle, setEditBottle] = useState<BunkerBottle | null>(null);
   const [deleteBottle, setDeleteBottle] = useState<BunkerBottle | null>(null);
 
@@ -58,13 +82,7 @@ export default function BottlesTable({ bottles, locations, productId }: BottlesT
   };
 
   const handleAddAnother = () => {
-    addMutation.mutate(
-      { product_id: productId },
-      {
-        onSuccess: () => addToast('success', 'Bottle added'),
-        onError: () => addToast('error', 'Failed to add bottle'),
-      }
-    );
+    navigate('/add', { state: { productId, productName, returnTo: location.pathname } });
   };
 
   return (
@@ -75,10 +93,9 @@ export default function BottlesTable({ bottles, locations, productId }: BottlesT
         </h2>
         <button
           onClick={handleAddAnother}
-          disabled={addMutation.isPending}
-          className="text-sm font-medium text-amber-700 hover:text-amber-800 transition-colors disabled:opacity-50"
+          className="text-sm font-medium text-amber-700 hover:text-amber-800 transition-colors"
         >
-          {addMutation.isPending ? 'Adding...' : '+ Add Another Bottle'}
+          + Add Another Bottle
         </button>
       </div>
 
@@ -88,55 +105,62 @@ export default function BottlesTable({ bottles, locations, productId }: BottlesT
           const locB = b.location_name || '';
           if (locA !== locB) return locA.localeCompare(locB);
           return (STATUS_ORDER[a.status] ?? 3) - (STATUS_ORDER[b.status] ?? 3);
-        }).map((bottle, idx) => (
-          <div
-            key={bottle.id}
-            className="border border-gray-200 rounded-lg p-4"
-          >
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-medium text-gray-500">#{idx + 1}</span>
-                <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${
-                  bottle.status === 'sealed'
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-blue-100 text-blue-800'
-                }`}>
-                  {bottle.status}
-                </span>
-                {bottle.location_name && (
-                  <span className="text-sm text-gray-600">{bottle.location_name}</span>
-                )}
-                {bottle.purchase_price != null && (
-                  <span className="text-sm text-gray-600">${Number(bottle.purchase_price).toFixed(2)}</span>
-                )}
+        }).map((bottle, idx) => {
+          const detailSummary = formatBottleDetails(bottle);
+          return (
+            <div
+              key={bottle.id}
+              className="border border-gray-200 rounded-lg p-4"
+            >
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-medium text-gray-500">#{idx + 1}</span>
+                  <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${
+                    bottle.status === 'sealed'
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-blue-100 text-blue-800'
+                  }`}>
+                    {bottle.status}
+                  </span>
+                  {bottle.location_name && (
+                    <span className="text-sm text-gray-600">{bottle.location_name}</span>
+                  )}
+                  {bottle.purchase_price != null && (
+                    <span className="text-sm text-gray-600">${Number(bottle.purchase_price).toFixed(2)}</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setEditBottle(bottle)}
+                    className="text-sm text-amber-700 hover:text-amber-800 font-medium"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleQuickAction(bottle)}
+                    disabled={updateMutation.isPending}
+                    className={`text-sm font-medium disabled:opacity-50 ${
+                      bottle.status === 'empty'
+                        ? 'text-red-500 hover:text-red-700'
+                        : 'text-amber-700 hover:text-amber-800'
+                    }`}
+                  >
+                    {bottle.status === 'sealed' ? 'Open' : bottle.status === 'opened' ? 'Empty' : 'Delete'}
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setEditBottle(bottle)}
-                  className="text-sm text-amber-700 hover:text-amber-800 font-medium"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleQuickAction(bottle)}
-                  disabled={updateMutation.isPending}
-                  className={`text-sm font-medium disabled:opacity-50 ${
-                    bottle.status === 'empty'
-                      ? 'text-red-500 hover:text-red-700'
-                      : 'text-amber-700 hover:text-amber-800'
-                  }`}
-                >
-                  {bottle.status === 'sealed' ? 'Open' : bottle.status === 'opened' ? 'Empty' : 'Delete'}
-                </button>
-              </div>
-            </div>
 
-            <div className="flex items-start gap-3">
-              <PhotoGallery photos={bottle.photos} />
-              <PhotoUpload bottleId={bottle.id} currentCount={bottle.photos.length} />
+              {detailSummary && (
+                <p className="text-xs text-gray-400 mb-2">{detailSummary}</p>
+              )}
+
+              <div className="flex items-start gap-3">
+                <PhotoGallery photos={bottle.photos} />
+                <PhotoUpload bottleId={bottle.id} currentCount={bottle.photos.length} />
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <BottleEditModal
@@ -144,6 +168,7 @@ export default function BottlesTable({ bottles, locations, productId }: BottlesT
         locations={locations}
         onClose={() => setEditBottle(null)}
         onDelete={editBottle ? () => { setDeleteBottle(editBottle); setEditBottle(null); } : undefined}
+        productContext={productContext}
       />
 
       <Dialog

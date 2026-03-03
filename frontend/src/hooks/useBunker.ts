@@ -80,8 +80,20 @@ export function useUpdateBottle() {
   const api = useApiClient();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ bottleId, ...body }: { bottleId: number; storage_location_id?: number; status?: string; purchase_price?: number }) =>
-      api.put(`/bunker/bottles/${bottleId}`, body),
+    mutationFn: ({ bottleId, ...body }: {
+      bottleId: number;
+      storage_location_id?: number | null;
+      status?: string;
+      purchase_price?: number | null;
+      batch_number?: string | null;
+      barrel_number?: string | null;
+      year_distilled?: number | null;
+      release_year?: number | null;
+      proof?: number | null;
+      abv?: number | null;
+      age_statement?: string | null;
+      mash_bill?: string | null;
+    }) => api.put(`/bunker/bottles/${bottleId}`, body),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bunker'] });
     },

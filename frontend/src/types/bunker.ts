@@ -27,8 +27,8 @@ export interface BunkerItemDetail extends BunkerListItem {
   description: string | null;
   volume_ml: number | null;
   msrp_usd: number | null;
-  mash_bill: string | null;       // effective (COALESCE override ?? product)
-  release_year: number | null;    // effective
+  mash_bill: string | null;
+  release_year: number | null;
   barrel_type: string | null;
   barrel_char_level: string | null;
   finish_type: string | null;
@@ -37,7 +37,7 @@ export interface BunkerItemDetail extends BunkerListItem {
   distiller_name: string | null;
   bottles: BunkerBottle[];
   tasting_notes: TastingNote[];
-  // Raw product values
+  // Raw product values (for context in bottle edit UI)
   product_proof: number | null;
   product_abv: number | null;
   product_age_statement: string | null;
@@ -45,16 +45,6 @@ export interface BunkerItemDetail extends BunkerListItem {
   product_release_year: number | null;
   product_batch_number: string | null;
   product_barrel_number: string | null;
-  // Per-user overrides (null = not set, defers to product value)
-  override_proof: number | null;
-  override_abv: number | null;
-  override_age_statement: string | null;
-  override_mash_bill: string | null;
-  override_release_year: number | null;
-  // Override-only fields (no product counterpart)
-  batch_number: string | null;
-  barrel_number: string | null;
-  year_distilled: number | null;
 }
 
 export interface BunkerBottle {
@@ -67,6 +57,22 @@ export interface BunkerBottle {
   updated_at: string;
   location_name: string | null;
   photos: BottlePhoto[];
+  // Raw bottle-level values (null = not set, reverts to product via COALESCE)
+  override_proof: number | null;
+  override_abv: number | null;
+  override_age_statement: string | null;
+  override_mash_bill: string | null;
+  override_release_year: number | null;
+  // Override-only (no product counterpart)
+  batch_number: string | null;
+  barrel_number: string | null;
+  year_distilled: number | null;
+  // Effective values (COALESCE bottle ?? product)
+  proof: number | null;
+  abv: number | null;
+  age_statement: string | null;
+  mash_bill: string | null;
+  release_year: number | null;
 }
 
 export interface BottlePhoto {

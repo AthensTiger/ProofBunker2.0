@@ -208,51 +208,85 @@ export async function getMenuPreview(req: Request, res: Response, next: NextFunc
 
     const template = templateResult.rows[0];
 
+    const settings = template.settings || {};
+    const collapse = settings.collapse_identical_bottles !== false; // default true
+
     // Get items — if none exist, use full bunker
     const hasItems = await pool.query(
       'SELECT COUNT(*)::int AS count FROM menu_template_items WHERE menu_template_id = $1',
       [id]
     );
 
+    // Shared SELECT columns for both queries
+    const DETAIL_COLS = `
+      COALESCE(bb.proof,         p.proof)         AS proof,
+      COALESCE(bb.abv,           p.abv)            AS abv,
+      COALESCE(bb.age_statement, p.age_statement)  AS age_statement,
+      COALESCE(bb.mash_bill,     p.mash_bill)      AS mash_bill,
+      COALESCE(bb.release_year,  p.release_year)   AS release_year,
+      bb.batch_number, bb.barrel_number, bb.year_distilled`;
+
+    const FINGERPRINT_COLS = `
+      COALESCE(bb.proof, p.proof),
+      COALESCE(bb.abv, p.abv),
+      COALESCE(bb.age_statement, p.age_statement),
+      COALESCE(bb.mash_bill, p.mash_bill),
+      COALESCE(bb.release_year, p.release_year),
+      bb.batch_number, bb.barrel_number, bb.year_distilled`;
+
     let items;
     if (hasItems.rows[0].count > 0) {
       const itemsResult = await pool.query(
-        `SELECT mti.section_override,
+        `SELECT
+                mti.section_override,
                 bi.product_id,
-                p.name, p.spirit_type, p.spirit_subtype, p.proof, p.abv,
-                p.age_statement, p.description, p.mash_bill, p.msrp_usd,
+                p.name, p.spirit_type, p.spirit_subtype, p.description, p.msrp_usd,
                 c.name AS company_name,
-                bi.personal_rating,
-                bi.notes,
+                bi.personal_rating, bi.notes,
                 pi.cdn_url AS image_url,
-                (SELECT MIN(bb.purchase_price) FROM bunker_bottles bb WHERE bb.bunker_item_id = bi.id AND bb.purchase_price IS NOT NULL) AS purchase_price
+                ${DETAIL_COLS},
+                ${collapse ? 'COUNT(*)::int AS quantity' : '1::int AS quantity'},
+                MIN(bb.purchase_price) AS purchase_price
          FROM menu_template_items mti
          JOIN bunker_items bi ON bi.id = mti.bunker_item_id
          JOIN products p ON p.id = bi.product_id
+         JOIN bunker_bottles bb ON bb.bunker_item_id = bi.id AND bb.status != 'empty'
          LEFT JOIN companies c ON c.id = p.company_id
          LEFT JOIN product_images pi ON pi.product_id = p.id AND pi.is_primary = true
          WHERE mti.menu_template_id = $1
+         ${collapse ? `GROUP BY
+           mti.section_override, bi.product_id, p.name, p.spirit_type, p.spirit_subtype,
+           p.description, p.msrp_usd, c.name, bi.personal_rating, bi.notes, pi.cdn_url,
+           ${FINGERPRINT_COLS}
+           HAVING COUNT(*) > 0` : ''}
          ORDER BY mti.display_order ASC, p.name ASC`,
         [id]
       );
       items = itemsResult.rows;
     } else {
       const allResult = await pool.query(
-        `SELECT NULL AS section_override,
+        `SELECT
+                NULL::text AS section_override,
                 bi.product_id,
-                p.name, p.spirit_type, p.spirit_subtype, p.proof, p.abv,
-                p.age_statement, p.description, p.mash_bill, p.msrp_usd,
+                p.name, p.spirit_type, p.spirit_subtype, p.description, p.msrp_usd,
                 c.name AS company_name,
-                bi.personal_rating,
-                bi.notes,
+                bi.personal_rating, bi.notes,
                 pi.cdn_url AS image_url,
-                (SELECT MIN(bb.purchase_price) FROM bunker_bottles bb WHERE bb.bunker_item_id = bi.id AND bb.purchase_price IS NOT NULL) AS purchase_price
+                ${DETAIL_COLS},
+                ${collapse ? 'COUNT(*)::int AS quantity' : '1::int AS quantity'},
+                MIN(bb.purchase_price) AS purchase_price
          FROM bunker_items bi
          JOIN products p ON p.id = bi.product_id
+         JOIN bunker_bottles bb ON bb.bunker_item_id = bi.id AND bb.status != 'empty'
          LEFT JOIN companies c ON c.id = p.company_id
          LEFT JOIN product_images pi ON pi.product_id = p.id AND pi.is_primary = true
          WHERE bi.user_id = $1
            AND p.approval_status = 'approved'
+         ${collapse ? `GROUP BY
+           bi.product_id, p.name, p.spirit_type, p.spirit_subtype,
+           p.description, p.msrp_usd, c.name, bi.personal_rating, bi.notes, pi.cdn_url,
+           ${FINGERPRINT_COLS}
+           HAVING COUNT(*) > 0` : ''}
          ORDER BY p.spirit_type ASC, p.name ASC`,
         [userId]
       );
@@ -297,7 +331,6 @@ export async function getMenuPreview(req: Request, res: Response, next: NextFunc
 
     // Resolve print logo URL when show_logo is enabled
     let print_logo_url: string | null = null;
-    const settings = template.settings || {};
     if (settings.show_logo) {
       let locQuery;
       if (hasItems.rows[0].count > 0) {

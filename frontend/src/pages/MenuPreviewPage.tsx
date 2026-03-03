@@ -37,6 +37,12 @@ export default function MenuPreviewPage() {
     show_notes: false,
     show_price: false,
     show_logo: false,
+    show_proof: false,
+    show_batch_number: false,
+    show_barrel_number: false,
+    show_year_distilled: false,
+    show_release_year: false,
+    collapse_identical_bottles: true,
     ...template.settings,
   };
   const columns = settings.columns;
@@ -102,6 +108,9 @@ export default function MenuPreviewPage() {
                       {/* Name + Price Row */}
                       <div className="flex items-baseline gap-1">
                         <span className="font-semibold text-gray-900 text-[0.85rem] leading-tight">{item.name}{item.age_statement && ` (${item.age_statement})`}</span>
+                        {item.quantity > 1 && (
+                          <span className="text-xs text-gray-400">×{item.quantity}</span>
+                        )}
                         <span className="flex-1 border-b border-dotted border-gray-300 mx-1 translate-y-[-3px]" />
                         {settings.show_price && (
                           item.purchase_price != null ? (
@@ -132,6 +141,25 @@ export default function MenuPreviewPage() {
                         {/* ABV */}
                         {settings.show_abv && item.abv != null && (
                           <p className="mt-0.5 text-gray-400">ABV: {parseFloat((Number(item.abv) * 100).toFixed(1))}%</p>
+                        )}
+
+                        {/* Proof */}
+                        {settings.show_proof && item.proof != null && (
+                          <p className="mt-0.5 text-gray-400">{item.proof} proof</p>
+                        )}
+
+                        {/* Batch / Barrel / Year Distilled / Release Year */}
+                        {settings.show_batch_number && item.batch_number && (
+                          <p className="mt-0.5 text-gray-400">Batch: {item.batch_number}</p>
+                        )}
+                        {settings.show_barrel_number && item.barrel_number && (
+                          <p className="mt-0.5 text-gray-400">Barrel: {item.barrel_number}</p>
+                        )}
+                        {settings.show_year_distilled && item.year_distilled != null && (
+                          <p className="mt-0.5 text-gray-400">Distilled: {item.year_distilled}</p>
+                        )}
+                        {settings.show_release_year && item.release_year != null && (
+                          <p className="mt-0.5 text-gray-400">Released: {item.release_year}</p>
                         )}
 
                         {/* Mash Bill */}
