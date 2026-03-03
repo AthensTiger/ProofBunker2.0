@@ -10,9 +10,16 @@ export interface BunkerListItem {
   slug: string;
   spirit_type: string;
   spirit_subtype: string | null;
+  // Effective values (COALESCE bottle ?? product) — part of the fingerprint
   abv: number | null;
   proof: number | null;
   age_statement: string | null;
+  mash_bill: string | null;
+  release_year: number | null;
+  // Override-only bottle fields — part of the fingerprint
+  batch_number: string | null;
+  barrel_number: string | null;
+  year_distilled: number | null;
   approval_status: 'approved' | 'pending' | 'rejected';
   company_name: string | null;
   image_url: string | null;

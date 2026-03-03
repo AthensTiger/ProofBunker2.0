@@ -45,17 +45,20 @@ export async function getBunkerList(req: Request, res: Response, next: NextFunct
     const allowedSorts: Record<string, string> = {
       name: 'p.name',
       spirit_type: 'p.spirit_type',
-      proof: 'p.proof',
+      proof: 'proof',
       rating: 'bi.personal_rating',
       created_at: 'bi.created_at',
     };
     const orderCol = allowedSorts[sort_by as string] || 'p.name';
     const orderDir = sort_dir === 'desc' ? 'DESC' : 'ASC';
 
+    // Group by the bottle detail fingerprint so that identical bottles collapse
+    // into one row (bottle_count = N) while bottles with any differing detail
+    // appear as separate rows.  NULL fingerprint fields are treated as equal
+    // by PostgreSQL GROUP BY, so two bottles with no batch number stay together.
     const result = await pool.query(
       `SELECT bi.id, bi.product_id, bi.personal_rating, bi.notes, bi.created_at,
-              p.name, p.slug, p.spirit_type, p.spirit_subtype, p.abv, p.proof,
-              p.age_statement, p.approval_status,
+              p.name, p.slug, p.spirit_type, p.spirit_subtype, p.approval_status,
               c.name AS company_name,
               COALESCE(pi.cdn_url, (
                 SELECT bp.cdn_url FROM bunker_bottles bb2
@@ -63,15 +66,23 @@ export async function getBunkerList(req: Request, res: Response, next: NextFunct
                 WHERE bb2.bunker_item_id = bi.id
                 ORDER BY bp.display_order ASC, bp.id ASC LIMIT 1
               )) AS image_url,
+              -- Effective (COALESCE bottle ?? product) values — part of the fingerprint
+              COALESCE(bb.proof,         p.proof)         AS proof,
+              COALESCE(bb.abv,           p.abv)           AS abv,
+              COALESCE(bb.age_statement, p.age_statement) AS age_statement,
+              COALESCE(bb.mash_bill,     p.mash_bill)     AS mash_bill,
+              COALESCE(bb.release_year,  p.release_year)  AS release_year,
+              -- Override-only fields
+              bb.batch_number,
+              bb.barrel_number,
+              bb.year_distilled,
+              -- Aggregated within the fingerprint group
               COUNT(bb.id)::int AS bottle_count,
               ARRAY_REMOVE(ARRAY_AGG(DISTINCT usl.name), NULL) AS location_names,
               ARRAY_REMOVE(ARRAY_AGG(DISTINCT bb.status), NULL) AS statuses,
-              (SELECT bb2.id FROM bunker_bottles bb2
-               WHERE bb2.bunker_item_id = bi.id
-               ORDER BY CASE bb2.status WHEN 'sealed' THEN 1 WHEN 'opened' THEN 2 WHEN 'empty' THEN 3 END, bb2.id LIMIT 1) AS primary_bottle_id,
-              (SELECT bb2.status FROM bunker_bottles bb2
-               WHERE bb2.bunker_item_id = bi.id
-               ORDER BY CASE bb2.status WHEN 'sealed' THEN 1 WHEN 'opened' THEN 2 WHEN 'empty' THEN 3 END, bb2.id LIMIT 1) AS primary_status
+              -- Primary bottle within this fingerprint group (sealed > opened > empty)
+              (ARRAY_AGG(bb.id     ORDER BY CASE bb.status WHEN 'sealed' THEN 1 WHEN 'opened' THEN 2 WHEN 'empty' THEN 3 END, bb.id))[1] AS primary_bottle_id,
+              (ARRAY_AGG(bb.status ORDER BY CASE bb.status WHEN 'sealed' THEN 1 WHEN 'opened' THEN 2 WHEN 'empty' THEN 3 END, bb.id))[1] AS primary_status
        FROM bunker_items bi
        JOIN products p ON p.id = bi.product_id
        LEFT JOIN companies c ON c.id = p.company_id
@@ -79,8 +90,17 @@ export async function getBunkerList(req: Request, res: Response, next: NextFunct
        LEFT JOIN bunker_bottles bb ON bb.bunker_item_id = bi.id
        LEFT JOIN user_storage_locations usl ON usl.id = bb.storage_location_id
        WHERE ${where}
-       GROUP BY bi.id, p.id, c.name, pi.cdn_url
-       ORDER BY ${orderCol} ${orderDir} NULLS LAST`,
+       GROUP BY
+         bi.id, bi.product_id, bi.personal_rating, bi.notes, bi.created_at,
+         p.id, p.name, p.slug, p.spirit_type, p.spirit_subtype, p.approval_status,
+         c.name, pi.cdn_url,
+         COALESCE(bb.proof,         p.proof),
+         COALESCE(bb.abv,           p.abv),
+         COALESCE(bb.age_statement, p.age_statement),
+         COALESCE(bb.mash_bill,     p.mash_bill),
+         COALESCE(bb.release_year,  p.release_year),
+         bb.batch_number, bb.barrel_number, bb.year_distilled
+       ORDER BY ${orderCol} ${orderDir} NULLS LAST, p.name ASC, bb.batch_number NULLS FIRST, bb.barrel_number NULLS FIRST`,
       params
     );
 

@@ -11,6 +11,32 @@ interface BunkerTableProps {
   onRatingChange: (itemId: number, rating: number | null) => void;
 }
 
+function buildDetailSummary(item: BunkerListItem): string {
+  const parts: string[] = [];
+  if (item.batch_number) parts.push(`Batch: ${item.batch_number}`);
+  if (item.barrel_number) parts.push(`Barrel: ${item.barrel_number}`);
+  if (item.year_distilled != null) parts.push(`Dist. ${item.year_distilled}`);
+  if (item.proof != null) parts.push(`${item.proof}pf`);
+  else if (item.abv != null) parts.push(`${parseFloat((Number(item.abv) * 100).toFixed(1))}% ABV`);
+  if (item.age_statement) parts.push(item.age_statement);
+  if (item.release_year != null) parts.push(`Rel. ${item.release_year}`);
+  return parts.join(' · ');
+}
+
+function rowKey(item: BunkerListItem): string {
+  return [
+    item.id,
+    item.batch_number ?? '',
+    item.barrel_number ?? '',
+    item.year_distilled ?? '',
+    item.proof ?? '',
+    item.abv ?? '',
+    item.age_statement ?? '',
+    item.release_year ?? '',
+    item.mash_bill ?? '',
+  ].join('|');
+}
+
 export default function BunkerTable({ items, showImages, onStatusAction, onDelete, onRatingChange }: BunkerTableProps) {
   const navigate = useNavigate();
 
@@ -32,9 +58,11 @@ export default function BunkerTable({ items, showImages, onStatusAction, onDelet
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">
-          {items.map((item) => (
+          {items.map((item) => {
+            const detailSummary = buildDetailSummary(item);
+            return (
             <tr
-              key={item.id}
+              key={rowKey(item)}
               className="hover:bg-gray-50 cursor-pointer transition-colors"
               onClick={() => navigate(`/bunker/${item.id}`)}
             >
@@ -50,11 +78,14 @@ export default function BunkerTable({ items, showImages, onStatusAction, onDelet
                 </td>
               )}
               <td className="px-4 py-3">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-medium text-gray-900 text-sm">{item.name}</span>
                   {item.approval_status === 'pending' && <Badge variant="pending">Pending</Badge>}
                   {item.approval_status === 'rejected' && <Badge variant="rejected">Rejected</Badge>}
                 </div>
+                {detailSummary && (
+                  <p className="text-xs text-gray-400 mt-0.5">{detailSummary}</p>
+                )}
               </td>
               <td className="px-4 py-3 text-sm text-gray-600 hidden md:table-cell">{item.company_name || '--'}</td>
               <td className="px-4 py-3 text-sm text-gray-600 hidden lg:table-cell capitalize">
@@ -105,7 +136,8 @@ export default function BunkerTable({ items, showImages, onStatusAction, onDelet
                 ) : null}
               </td>
             </tr>
-          ))}
+          );
+          })}
         </tbody>
       </table>
     </div>
