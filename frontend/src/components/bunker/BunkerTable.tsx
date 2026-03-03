@@ -71,30 +71,35 @@ export default function BunkerTable({ items, showImages, onStatusAction, onDelet
                 {item.statuses.length > 0 ? item.statuses.join(', ') : '--'}
               </td>
               <td className="px-4 py-3 text-right">
-                {item.primary_status === 'sealed' && item.primary_bottle_id && (
+                {item.bottle_count > 1 ? (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); navigate(`/bunker/${item.id}`); }}
+                    className="text-sm font-medium text-amber-700 hover:text-amber-900"
+                  >
+                    Multiple
+                  </button>
+                ) : item.primary_status === 'sealed' && item.primary_bottle_id ? (
                   <button
                     onClick={(e) => { e.stopPropagation(); onStatusAction(item.primary_bottle_id!, 'opened'); }}
                     className="text-sm font-medium text-amber-700 hover:text-amber-900"
                   >
                     Open
                   </button>
-                )}
-                {item.primary_status === 'opened' && item.primary_bottle_id && (
+                ) : item.primary_status === 'opened' && item.primary_bottle_id ? (
                   <button
                     onClick={(e) => { e.stopPropagation(); onStatusAction(item.primary_bottle_id!, 'empty'); }}
                     className="text-sm font-medium text-amber-700 hover:text-amber-900"
                   >
                     Empty
                   </button>
-                )}
-                {item.primary_status === 'empty' && (
+                ) : item.primary_status === 'empty' ? (
                   <button
                     onClick={(e) => { e.stopPropagation(); onDelete(item); }}
                     className="text-sm font-medium text-red-500 hover:text-red-700"
                   >
                     Delete
                   </button>
-                )}
+                ) : null}
               </td>
             </tr>
           ))}

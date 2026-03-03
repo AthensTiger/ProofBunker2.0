@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useBunkerList, useUpdateBottle, useRemoveBunkerItem } from '../hooks/useBunker';
 import { useLocations } from '../hooks/useLocations';
 import { useSpiritTypes } from '../hooks/useProducts';
@@ -11,13 +12,48 @@ import BunkerEmptyState from '../components/bunker/BunkerEmptyState';
 
 export default function BunkerListPage() {
   const addToast = useUIStore((s) => s.addToast);
-  const [searchText, setSearchText] = useState('');
-  const [showImages, setShowImages] = useState(false);
-  const [filters, setFilters] = useState<BunkerFilters>({
-    sort_by: 'name',
-    sort_dir: 'asc',
-  });
+  const [searchParams, setSearchParams] = useSearchParams();
   const [deleteTarget, setDeleteTarget] = useState<BunkerListItem | null>(null);
+
+  // All filter/display state derived from URL search params
+  const searchText = searchParams.get('q') || '';
+  const showImages = searchParams.get('images') === '1';
+  const filters: BunkerFilters = {
+    spirit_type: searchParams.get('spirit_type') || undefined,
+    location_id: searchParams.get('location_id') ? Number(searchParams.get('location_id')) : undefined,
+    statuses: searchParams.get('statuses')
+      ? (searchParams.get('statuses')!.split(',') as ('sealed' | 'opened' | 'empty')[])
+      : undefined,
+    sort_by: searchParams.get('sort_by') || 'name',
+    sort_dir: (searchParams.get('sort_dir') as 'asc' | 'desc') || 'asc',
+  };
+
+  const updateParams = (updates: Record<string, string | undefined>) => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        for (const [key, val] of Object.entries(updates)) {
+          if (val !== undefined && val !== '') next.set(key, val);
+          else next.delete(key);
+        }
+        return next;
+      },
+      { replace: true }
+    );
+  };
+
+  const handleSearchChange = (text: string) => updateParams({ q: text || undefined });
+  const handleToggleImages = () => updateParams({ images: showImages ? undefined : '1' });
+  const handleFilterChange = (partial: Partial<BunkerFilters>) => {
+    const next = { ...filters, ...partial };
+    updateParams({
+      spirit_type: next.spirit_type,
+      location_id: next.location_id != null ? String(next.location_id) : undefined,
+      statuses: next.statuses?.length ? next.statuses.join(',') : undefined,
+      sort_by: next.sort_by !== 'name' ? next.sort_by : undefined,
+      sort_dir: next.sort_dir !== 'asc' ? next.sort_dir : undefined,
+    });
+  };
 
   const { data: items = [], isLoading } = useBunkerList(filters);
   const { data: locations = [] } = useLocations();
@@ -57,10 +93,6 @@ export default function BunkerListPage() {
     );
   }, [items, searchText]);
 
-  const handleFilterChange = (partial: Partial<BunkerFilters>) => {
-    setFilters((prev) => ({ ...prev, ...partial }));
-  };
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -84,11 +116,11 @@ export default function BunkerListPage() {
         <>
           <BunkerActionRow
             searchText={searchText}
-            onSearchChange={setSearchText}
+            onSearchChange={handleSearchChange}
             filters={filters}
             onFilterChange={handleFilterChange}
             showImages={showImages}
-            onToggleImages={() => setShowImages((v) => !v)}
+            onToggleImages={handleToggleImages}
             locations={locations}
             spiritTypes={spiritTypes}
           />
