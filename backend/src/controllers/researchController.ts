@@ -93,7 +93,7 @@ The JSON must match this schema:
   "company_name": "string or null - parent/brand company name",
   "distiller_name": "string or null - actual distillery name",
   "proof": "number or null",
-  "abv": "number or null - as percentage like 45.0",
+  "abv": "number or null - as a decimal fraction like 0.45 for 45% ABV",
   "age_statement": "string or null - e.g. '12 Years', 'NAS'",
   "description": "string or null - brief product description",
   "mash_bill": "string or null - e.g. '75% corn, 13% rye, 12% malted barley'",
