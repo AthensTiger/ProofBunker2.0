@@ -1,5 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { StorageLocation } from '../../types/location';
+import type { ProductDetail, ResearchResult } from '../../types/product';
+import { useResearchProduct } from '../../hooks/useProducts';
+import { useUIStore } from '../../stores/uiStore';
+import ResearchComparisonModal from '../ui/ResearchComparisonModal';
 
 interface OverrideFields {
   batch_number: string;
@@ -35,9 +39,26 @@ interface BottleDetailsFormProps {
   onCancel: () => void;
   isPending: boolean;
   productName: string;
+  productDetail: ProductDetail | null;
 }
 
-export default function BottleDetailsForm({ locations, onSubmit, onCancel, isPending, productName }: BottleDetailsFormProps) {
+function productToOverrides(product: ProductDetail | null): Partial<OverrideFields> {
+  if (!product) return {};
+  const out: Partial<OverrideFields> = {};
+  if (product.proof != null) out.proof = String(product.proof);
+  if (product.abv != null) out.abv = parseFloat((Number(product.abv) * 100).toFixed(2)).toString();
+  if (product.age_statement) out.age_statement = product.age_statement;
+  if (product.mash_bill) out.mash_bill = product.mash_bill;
+  return out;
+}
+
+export default function BottleDetailsForm({
+  locations, onSubmit, onCancel, isPending, productName, productDetail,
+}: BottleDetailsFormProps) {
+  const addToast = useUIStore((s) => s.addToast);
+  const research = useResearchProduct();
+  const [researchResult, setResearchResult] = useState<ResearchResult | null>(null);
+
   const [locationId, setLocationId] = useState<number | undefined>(() => {
     const saved = localStorage.getItem('pb_last_location_id');
     const savedId = saved ? Number(saved) : undefined;
@@ -50,6 +71,17 @@ export default function BottleDetailsForm({ locations, onSubmit, onCancel, isPen
   const [price, setPrice] = useState('');
   const [showDetails, setShowDetails] = useState(false);
   const [overrides, setOverrides] = useState<OverrideFields>(EMPTY_OVERRIDES);
+
+  // Pre-populate from product data when it loads; auto-expand the section
+  useEffect(() => {
+    if (!productDetail) return;
+    const vals = productToOverrides(productDetail);
+    if (Object.keys(vals).length > 0) {
+      setOverrides((prev) => ({ ...prev, ...vals }));
+      setShowDetails(true);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productDetail?.id]);
 
   const setField = (key: keyof OverrideFields, value: string) =>
     setOverrides((prev) => ({ ...prev, [key]: value }));
@@ -75,136 +107,218 @@ export default function BottleDetailsForm({ locations, onSubmit, onCancel, isPen
     });
   };
 
+  const handleResearch = () => {
+    research.mutate(productName, {
+      onSuccess: (data) => setResearchResult(data),
+      onError: (err: any) => addToast('error', err?.message || 'Research failed'),
+    });
+  };
+
+  // Apply research results to form fields only (not master product)
+  const handleApplyResearch = (selected: Partial<ResearchResult>) => {
+    if (selected.proof != null) setField('proof', String(selected.proof));
+    if (selected.abv != null) setField('abv', parseFloat((selected.abv * 100).toFixed(2)).toString());
+    if (selected.age_statement != null) setField('age_statement', selected.age_statement);
+    if (selected.mash_bill != null) setField('mash_bill', selected.mash_bill);
+    setResearchResult(null);
+    setShowDetails(true);
+  };
+
   const inputClass = 'w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent';
 
-  return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">
-        Add <span className="text-amber-700">{productName}</span> to Bunker
-      </h3>
+  const productAbvPct = productDetail?.abv != null
+    ? parseFloat((Number(productDetail.abv) * 100).toFixed(2)).toString()
+    : null;
 
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-          <select
-            value={locationId ?? ''}
-            onChange={(e) => {
-              const val = e.target.value ? Number(e.target.value) : undefined;
-              setLocationId(val);
-              if (val != null) localStorage.setItem('pb_last_location_id', String(val));
-              else localStorage.removeItem('pb_last_location_id');
-            }}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
+  return (
+    <>
+      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-gray-900">
+            Add <span className="text-amber-700">{productName}</span> to Bunker
+          </h3>
+          <button
+            type="button"
+            onClick={handleResearch}
+            disabled={research.isPending}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-amber-700 border border-amber-300 rounded-lg hover:bg-amber-50 transition-colors disabled:opacity-50"
           >
-            {locations.length === 0 && <option value="">No location</option>}
-            {locations.map((loc) => (
-              <option key={loc.id} value={loc.id}>{loc.name}</option>
-            ))}
-          </select>
+            {research.isPending ? (
+              <>
+                <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                Researching...
+              </>
+            ) : (
+              <>
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+                </svg>
+                Research
+              </>
+            )}
+          </button>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-          <div className="flex gap-2">
-            {(['sealed', 'opened', 'empty'] as const).map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => setStatus(s)}
-                className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors capitalize ${
-                  status === s ? 'bg-amber-700 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+            <select
+              value={locationId ?? ''}
+              onChange={(e) => {
+                const val = e.target.value ? Number(e.target.value) : undefined;
+                setLocationId(val);
+                if (val != null) localStorage.setItem('pb_last_location_id', String(val));
+                else localStorage.removeItem('pb_last_location_id');
+              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
+            >
+              {locations.length === 0 && <option value="">No location</option>}
+              {locations.map((loc) => (
+                <option key={loc.id} value={loc.id}>{loc.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+            <div className="flex gap-2">
+              {(['sealed', 'opened', 'empty'] as const).map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setStatus(s)}
+                  className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors capitalize ${
+                    status === s ? 'bg-amber-700 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Purchase Price ($)</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              placeholder="0.00"
+              className={inputClass}
+            />
+          </div>
+
+          {/* Bottle-specific details */}
+          <div className="border-t border-gray-100 pt-3">
+            <button
+              type="button"
+              onClick={() => setShowDetails((v) => !v)}
+              className="flex items-center gap-1 text-sm text-amber-700 hover:text-amber-800 font-medium"
+            >
+              <svg
+                className={`w-4 h-4 transition-transform ${showDetails ? 'rotate-90' : ''}`}
+                fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
               >
-                {s}
-              </button>
-            ))}
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+              Bottle-Specific Details (optional)
+            </button>
+
+            {showDetails && (
+              <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Batch #</label>
+                  <input type="text" value={overrides.batch_number} onChange={(e) => setField('batch_number', e.target.value)} placeholder="e.g., Batch 7" className={inputClass} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Barrel #</label>
+                  <input type="text" value={overrides.barrel_number} onChange={(e) => setField('barrel_number', e.target.value)} placeholder="e.g., 12B" className={inputClass} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Year Distilled</label>
+                  <input type="number" min="1800" max="2099" value={overrides.year_distilled} onChange={(e) => setField('year_distilled', e.target.value)} placeholder="e.g., 2019" className={inputClass} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Release Year</label>
+                  <input type="number" min="1800" max="2099" value={overrides.release_year} onChange={(e) => setField('release_year', e.target.value)} placeholder="e.g., 2022" className={inputClass} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Proof
+                    {productDetail?.proof != null && overrides.proof === String(productDetail.proof) && (
+                      <span className="ml-1 text-[10px] text-amber-600 font-normal">from product</span>
+                    )}
+                  </label>
+                  <input type="number" step="0.1" min="0" value={overrides.proof} onChange={(e) => setField('proof', e.target.value)} placeholder="e.g., 90.0" className={inputClass} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    ABV (%)
+                    {productAbvPct != null && overrides.abv === productAbvPct && (
+                      <span className="ml-1 text-[10px] text-amber-600 font-normal">from product</span>
+                    )}
+                  </label>
+                  <input type="number" step="0.1" min="0" max="100" value={overrides.abv} onChange={(e) => setField('abv', e.target.value)} placeholder="e.g., 45.0" className={inputClass} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Age Statement
+                    {productDetail?.age_statement && overrides.age_statement === productDetail.age_statement && (
+                      <span className="ml-1 text-[10px] text-amber-600 font-normal">from product</span>
+                    )}
+                  </label>
+                  <input type="text" value={overrides.age_statement} onChange={(e) => setField('age_statement', e.target.value)} placeholder="e.g., 12 Year" className={inputClass} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Mash Bill
+                    {productDetail?.mash_bill && overrides.mash_bill === productDetail.mash_bill && (
+                      <span className="ml-1 text-[10px] text-amber-600 font-normal">from product</span>
+                    )}
+                  </label>
+                  <input type="text" value={overrides.mash_bill} onChange={(e) => setField('mash_bill', e.target.value)} placeholder="e.g., 75% corn, 21% rye" className={inputClass} />
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Purchase Price ($)</label>
-          <input
-            type="number"
-            step="0.01"
-            min="0"
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
-            placeholder="0.00"
-            className={inputClass}
-          />
-        </div>
-
-        {/* Optional bottle-specific details */}
-        <div className="border-t border-gray-100 pt-3">
+        <div className="flex justify-end gap-3 mt-6">
           <button
             type="button"
-            onClick={() => setShowDetails((v) => !v)}
-            className="flex items-center gap-1 text-sm text-amber-700 hover:text-amber-800 font-medium"
+            onClick={onCancel}
+            className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
           >
-            <svg
-              className={`w-4 h-4 transition-transform ${showDetails ? 'rotate-90' : ''}`}
-              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-            </svg>
-            Bottle-Specific Details (optional)
+            Cancel
           </button>
-
-          {showDetails && (
-            <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3">
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Batch #</label>
-                <input type="text" value={overrides.batch_number} onChange={(e) => setField('batch_number', e.target.value)} placeholder="e.g., Batch 7" className={inputClass} />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Barrel #</label>
-                <input type="text" value={overrides.barrel_number} onChange={(e) => setField('barrel_number', e.target.value)} placeholder="e.g., 12B" className={inputClass} />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Year Distilled</label>
-                <input type="number" min="1800" max="2099" value={overrides.year_distilled} onChange={(e) => setField('year_distilled', e.target.value)} placeholder="e.g., 2019" className={inputClass} />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Release Year</label>
-                <input type="number" min="1800" max="2099" value={overrides.release_year} onChange={(e) => setField('release_year', e.target.value)} placeholder="e.g., 2022" className={inputClass} />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Proof</label>
-                <input type="number" step="0.1" min="0" value={overrides.proof} onChange={(e) => setField('proof', e.target.value)} placeholder="e.g., 90.0" className={inputClass} />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">ABV (%)</label>
-                <input type="number" step="0.1" min="0" max="100" value={overrides.abv} onChange={(e) => setField('abv', e.target.value)} placeholder="e.g., 45.0" className={inputClass} />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Age Statement</label>
-                <input type="text" value={overrides.age_statement} onChange={(e) => setField('age_statement', e.target.value)} placeholder="e.g., 12 Year" className={inputClass} />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Mash Bill</label>
-                <input type="text" value={overrides.mash_bill} onChange={(e) => setField('mash_bill', e.target.value)} placeholder="e.g., 75% corn, 21% rye" className={inputClass} />
-              </div>
-            </div>
-          )}
+          <button
+            type="submit"
+            disabled={isPending}
+            className="px-4 py-2 text-sm font-medium text-white bg-amber-700 hover:bg-amber-800 rounded-lg transition-colors disabled:opacity-50"
+          >
+            {isPending ? 'Adding...' : 'Add to Bunker'}
+          </button>
         </div>
-      </div>
+      </form>
 
-      <div className="flex justify-end gap-3 mt-6">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={isPending}
-          className="px-4 py-2 text-sm font-medium text-white bg-amber-700 hover:bg-amber-800 rounded-lg transition-colors disabled:opacity-50"
-        >
-          {isPending ? 'Adding...' : 'Add to Bunker'}
-        </button>
-      </div>
-    </form>
+      {researchResult && (
+        <ResearchComparisonModal
+          result={researchResult}
+          currentValues={{
+            proof: overrides.proof ? parseFloat(overrides.proof) : null,
+            abv: overrides.abv ? parseFloat(overrides.abv) / 100 : null,
+            age_statement: overrides.age_statement || null,
+            mash_bill: overrides.mash_bill || null,
+          }}
+          onApply={(selected) => handleApplyResearch(selected)}
+          onClose={() => setResearchResult(null)}
+        />
+      )}
+    </>
   );
 }

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAddToBunker } from '../hooks/useBunker';
 import { useLocations } from '../hooks/useLocations';
 import { useSubmitProduct } from '../hooks/useSubmissions';
+import { useProductDetail } from '../hooks/useProducts';
 import { useUIStore } from '../stores/uiStore';
 import type { AutocompleteResult } from '../types/product';
 import type { UpcLookupResult } from '../types/product';
@@ -23,6 +24,8 @@ export default function AddBottlePage() {
   const [step, setStep] = useState<Step>('search');
   const [selectedProduct, setSelectedProduct] = useState<AutocompleteResult | UpcLookupResult | null>(null);
   const [unknownUpc, setUnknownUpc] = useState('');
+
+  const { data: productDetail } = useProductDetail(selectedProduct?.id ?? null);
 
   const handleProductSelect = (product: AutocompleteResult | UpcLookupResult) => {
     setSelectedProduct(product);
@@ -165,6 +168,7 @@ export default function AddBottlePage() {
             onCancel={() => { setStep('search'); setSelectedProduct(null); }}
             isPending={addMutation.isPending}
             productName={selectedProduct.name}
+            productDetail={productDetail ?? null}
           />
         </div>
       )}
