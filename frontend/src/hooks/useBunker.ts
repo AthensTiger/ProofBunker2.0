@@ -35,7 +35,7 @@ export function useAddToBunker() {
     mutationFn: (body: AddToBunkerRequest) =>
       api.post<AddToBunkerResponse>('/bunker', body),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['bunker', 'list'] });
+      queryClient.invalidateQueries({ queryKey: ['bunker'] });
     },
   });
 }
