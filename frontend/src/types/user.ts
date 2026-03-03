@@ -9,6 +9,7 @@ export interface UserRecord {
   email_verified: boolean;
   preferences: Record<string, unknown>;
   features: { messages: boolean; posts: boolean };
+  logo_url?: string | null;
   created_at: string;
   updated_at: string;
 }

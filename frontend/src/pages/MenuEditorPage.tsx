@@ -221,6 +221,7 @@ export default function MenuEditorPage() {
                 ['show_mash_bill', 'Show Mash Bill'],
                 ['show_notes', 'Show Notes'],
                 ['show_price', 'Show Purchase Price'],
+                ['show_logo', 'Show Logo Watermark'],
               ] as const).map(([key, label]) => (
                 <label key={key} className="flex items-center gap-2 text-sm cursor-pointer">
                   <input

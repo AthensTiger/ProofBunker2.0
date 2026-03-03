@@ -47,3 +47,18 @@ export function useUpdatePreferences() {
     },
   });
 }
+
+export function useUploadUserLogo() {
+  const api = useApiClient();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (file: File) => {
+      const fd = new FormData();
+      fd.append('logo', file);
+      return api.postFormData<UserRecord>('/users/me/logo', fd);
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(['user', 'me'], data);
+    },
+  });
+}

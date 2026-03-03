@@ -44,3 +44,16 @@ export function useDeleteLocation() {
     },
   });
 }
+
+export function useUploadLocationLogo() {
+  const api = useApiClient();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, file }: { id: number; file: File }) => {
+      const fd = new FormData();
+      fd.append('logo', file);
+      return api.postFormData<StorageLocation>(`/locations/${id}/logo`, fd);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['locations'] }),
+  });
+}

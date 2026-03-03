@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
+import { PutObjectCommand } from '@aws-sdk/client-s3';
 import pool from '../config/database';
+import r2Client, { R2_BUCKET, R2_PUBLIC_URL } from '../config/r2';
 
 export async function getMe(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
@@ -79,6 +81,40 @@ export async function updatePreferences(req: Request, res: Response, next: NextF
     const result = await pool.query(
       `UPDATE users SET preferences = $1 WHERE id = $2 RETURNING *`,
       [JSON.stringify(preferences), userId]
+    );
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function uploadUserLogo(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const userId = req.user!.id;
+    const file = req.file;
+
+    if (!file) {
+      res.status(400).json({ error: 'No image file provided' });
+      return;
+    }
+
+    const ext = (file.originalname.split('.').pop() || 'jpg').toLowerCase();
+    const storageKey = `users/${userId}/${Date.now()}.${ext}`;
+
+    await r2Client.send(new PutObjectCommand({
+      Bucket: R2_BUCKET,
+      Key: storageKey,
+      Body: file.buffer,
+      ContentType: file.mimetype,
+      CacheControl: 'public, max-age=31536000',
+    }));
+
+    const cdnUrl = `${R2_PUBLIC_URL}/${storageKey}`;
+
+    const result = await pool.query(
+      `UPDATE users SET logo_url = $1, updated_at = NOW() WHERE id = $2 RETURNING *`,
+      [cdnUrl, userId]
     );
 
     res.json(result.rows[0]);

@@ -1,12 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
+import { PutObjectCommand } from '@aws-sdk/client-s3';
 import pool from '../config/database';
+import r2Client, { R2_BUCKET, R2_PUBLIC_URL } from '../config/r2';
 
 export async function getLocations(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const userId = req.user!.id;
 
     const result = await pool.query(
-      `SELECT id, name, display_order
+      `SELECT id, name, display_order, logo_url
        FROM user_storage_locations
        WHERE user_id = $1
        ORDER BY display_order ASC, name ASC`,
@@ -127,6 +129,54 @@ export async function deleteLocation(req: Request, res: Response, next: NextFunc
     }
 
     res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function uploadLocationLogo(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const userId = req.user!.id;
+    const { id } = req.params;
+    const file = req.file;
+
+    if (!file) {
+      res.status(400).json({ error: 'No image file provided' });
+      return;
+    }
+
+    // Verify ownership
+    const ownerCheck = await pool.query(
+      'SELECT id FROM user_storage_locations WHERE id = $1 AND user_id = $2',
+      [id, userId]
+    );
+    if (ownerCheck.rows.length === 0) {
+      res.status(404).json({ error: 'Location not found' });
+      return;
+    }
+
+    const ext = (file.originalname.split('.').pop() || 'jpg').toLowerCase();
+    const storageKey = `locations/${userId}/${id}/${Date.now()}.${ext}`;
+
+    await r2Client.send(new PutObjectCommand({
+      Bucket: R2_BUCKET,
+      Key: storageKey,
+      Body: file.buffer,
+      ContentType: file.mimetype,
+      CacheControl: 'public, max-age=31536000',
+    }));
+
+    const cdnUrl = `${R2_PUBLIC_URL}/${storageKey}`;
+
+    const result = await pool.query(
+      `UPDATE user_storage_locations
+       SET logo_url = $1
+       WHERE id = $2 AND user_id = $3
+       RETURNING id, name, display_order, logo_url`,
+      [cdnUrl, id, userId]
+    );
+
+    res.json(result.rows[0]);
   } catch (err) {
     next(err);
   }

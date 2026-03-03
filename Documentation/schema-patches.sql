@@ -126,3 +126,12 @@ CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, read
 -- are always available and not controlled here.
 -- ================================================================
 ALTER TABLE users ADD COLUMN IF NOT EXISTS features JSONB NOT NULL DEFAULT '{"messages": false, "posts": false}';
+
+-- ================================================================
+-- Logo URLs for users and storage locations
+-- Used for Print Bunker watermarks:
+--   - If all items from one location with logo → use location logo
+--   - Otherwise → use user's bunker logo
+-- ================================================================
+ALTER TABLE users ADD COLUMN IF NOT EXISTS logo_url VARCHAR(1000);
+ALTER TABLE user_storage_locations ADD COLUMN IF NOT EXISTS logo_url VARCHAR(1000);

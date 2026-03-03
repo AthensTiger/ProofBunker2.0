@@ -36,6 +36,7 @@ export default function MenuPreviewPage() {
     show_mash_bill: false,
     show_notes: false,
     show_price: false,
+    show_logo: false,
     ...template.settings,
   };
   const columns = settings.columns;
@@ -57,8 +58,14 @@ export default function MenuPreviewPage() {
       </div>
 
       {/* Menu Page */}
-      <div className="menu-page bg-white rounded-lg shadow print:shadow-none print:rounded-none">
-        <div className="px-10 py-8 print:px-0 print:py-0">
+      <div className="menu-page relative bg-white rounded-lg shadow print:shadow-none print:rounded-none">
+        {/* Logo Watermark */}
+        {settings.show_logo && template.print_logo_url && (
+          <div className="print-watermark-container" aria-hidden="true">
+            <img src={template.print_logo_url} alt="" className="print-watermark" />
+          </div>
+        )}
+        <div className="relative z-10 px-10 py-8 print:px-0 print:py-0">
 
           {/* Header */}
           <div className="text-center mb-6 print:mb-4">

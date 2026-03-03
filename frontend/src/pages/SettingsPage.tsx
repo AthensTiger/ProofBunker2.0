@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
-import { useCurrentUser, useUpdateProfile } from '../hooks/useUser';
-import { useLocations, useCreateLocation, useUpdateLocation, useDeleteLocation } from '../hooks/useLocations';
+import { useCurrentUser, useUpdateProfile, useUploadUserLogo } from '../hooks/useUser';
+import { useLocations, useCreateLocation, useUpdateLocation, useDeleteLocation, useUploadLocationLogo } from '../hooks/useLocations';
 import { useMyShares, useCreateShare, useDeleteShare } from '../hooks/useShares';
 import { useUIStore } from '../stores/uiStore';
 import ExportDialog from '../components/export/ExportDialog';
@@ -14,17 +14,44 @@ export default function SettingsPage() {
   const { data: locations = [] } = useLocations();
   const { data: shares = [] } = useMyShares();
   const updateProfile = useUpdateProfile();
+  const uploadUserLogo = useUploadUserLogo();
+  const uploadLocationLogo = useUploadLocationLogo();
   const createLocation = useCreateLocation();
   const updateLocation = useUpdateLocation();
   const deleteLocation = useDeleteLocation();
   const createShare = useCreateShare();
   const deleteShare = useDeleteShare();
 
+  const userLogoInputRef = useRef<HTMLInputElement>(null);
+  const locationLogoInputRef = useRef<HTMLInputElement>(null);
+  const [targetLocationId, setTargetLocationId] = useState<number | null>(null);
+
   const [displayName, setDisplayName] = useState(user?.display_name || '');
   const [newLocationName, setNewLocationName] = useState('');
   const [editingLocation, setEditingLocation] = useState<{ id: number; name: string } | null>(null);
   const [shareEmail, setShareEmail] = useState('');
   const [showExport, setShowExport] = useState(false);
+
+  const handleUserLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    uploadUserLogo.mutate(file, {
+      onSuccess: () => addToast('success', 'Bunker logo updated'),
+      onError: () => addToast('error', 'Failed to upload logo'),
+    });
+    e.target.value = '';
+  };
+
+  const handleLocationLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !targetLocationId) return;
+    uploadLocationLogo.mutate({ id: targetLocationId, file }, {
+      onSuccess: () => addToast('success', 'Location logo updated'),
+      onError: () => addToast('error', 'Failed to upload logo'),
+    });
+    e.target.value = '';
+    setTargetLocationId(null);
+  };
 
   const handleSaveProfile = () => {
     updateProfile.mutate(
@@ -128,12 +155,69 @@ export default function SettingsPage() {
         </div>
       </section>
 
+      {/* Bunker Logo */}
+      <section className="bg-white rounded-lg shadow p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-1">Bunker Logo</h2>
+        <p className="text-sm text-gray-500 mb-4">Used as a watermark on Print Bunker menus.</p>
+        <input
+          ref={userLogoInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleUserLogoChange}
+        />
+        <div className="flex items-center gap-4">
+          {user?.logo_url ? (
+            <img
+              src={user.logo_url}
+              alt="Bunker logo"
+              className="w-20 h-20 object-contain rounded border border-gray-200 bg-gray-50"
+            />
+          ) : (
+            <div className="w-20 h-20 rounded border-2 border-dashed border-gray-300 flex items-center justify-center bg-gray-50">
+              <span className="text-2xl text-gray-300">🖼</span>
+            </div>
+          )}
+          <button
+            onClick={() => userLogoInputRef.current?.click()}
+            disabled={uploadUserLogo.isPending}
+            className="px-4 py-2 text-sm font-medium border border-amber-700 text-amber-700 rounded-lg hover:bg-amber-50 transition-colors disabled:opacity-50"
+          >
+            {uploadUserLogo.isPending ? 'Uploading…' : user?.logo_url ? 'Replace Logo' : 'Upload Logo'}
+          </button>
+        </div>
+      </section>
+
       {/* Locations */}
       <section className="bg-white rounded-lg shadow p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Storage Locations <HelpTip text="Named spots where you physically keep bottles (e.g., 'Bar Cart', 'Basement Rack'). Create locations here, then assign bottles to them from the bunker view." position="right" /></h2>
+        {/* Hidden file input for location logos */}
+        <input
+          ref={locationLogoInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleLocationLogoChange}
+        />
         <div className="space-y-2 mb-4">
           {locations.map((loc) => (
             <div key={loc.id} className="flex items-center py-2 border-b border-gray-100 last:border-0 gap-2">
+              {/* Location logo thumbnail / upload button */}
+              <button
+                title={loc.logo_url ? 'Replace location logo' : 'Upload location logo'}
+                onClick={() => {
+                  setTargetLocationId(loc.id);
+                  locationLogoInputRef.current?.click();
+                }}
+                disabled={uploadLocationLogo.isPending && targetLocationId === loc.id}
+                className="flex-shrink-0 w-8 h-8 rounded border border-gray-200 overflow-hidden bg-gray-50 hover:border-amber-400 transition-colors disabled:opacity-50"
+              >
+                {loc.logo_url ? (
+                  <img src={loc.logo_url} alt="" className="w-full h-full object-contain" />
+                ) : (
+                  <span className="flex items-center justify-center w-full h-full text-gray-300 text-xs">📷</span>
+                )}
+              </button>
               {editingLocation?.id === loc.id ? (
                 <form onSubmit={handleSaveLocationName} className="flex items-center gap-2 flex-1">
                   <input

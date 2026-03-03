@@ -295,8 +295,45 @@ export async function getMenuPreview(req: Request, res: Response, next: NextFunc
       sortedSections[key] = sections[key];
     }
 
+    // Resolve print logo URL when show_logo is enabled
+    let print_logo_url: string | null = null;
+    const settings = template.settings || {};
+    if (settings.show_logo) {
+      let locQuery;
+      if (hasItems.rows[0].count > 0) {
+        locQuery = await pool.query(
+          `SELECT DISTINCT usl.id, usl.logo_url
+           FROM menu_template_items mti
+           JOIN bunker_items bi ON bi.id = mti.bunker_item_id
+           JOIN bunker_bottles bb ON bb.bunker_item_id = bi.id AND bb.status != 'empty'
+           LEFT JOIN user_storage_locations usl ON usl.id = bb.storage_location_id AND usl.user_id = $2
+           WHERE mti.menu_template_id = $1`,
+          [id, userId]
+        );
+      } else {
+        locQuery = await pool.query(
+          `SELECT DISTINCT usl.id, usl.logo_url
+           FROM bunker_items bi
+           JOIN bunker_bottles bb ON bb.bunker_item_id = bi.id AND bb.status != 'empty'
+           LEFT JOIN user_storage_locations usl ON usl.id = bb.storage_location_id
+           WHERE bi.user_id = $1`,
+          [userId]
+        );
+      }
+
+      const uniqueLocIds = [...new Set(locQuery.rows.map((r: any) => r.id))].filter(Boolean);
+      if (uniqueLocIds.length === 1) {
+        print_logo_url = locQuery.rows.find((r: any) => r.id === uniqueLocIds[0])?.logo_url ?? null;
+      }
+
+      if (!print_logo_url) {
+        const userRow = await pool.query('SELECT logo_url FROM users WHERE id = $1', [userId]);
+        print_logo_url = userRow.rows[0]?.logo_url ?? null;
+      }
+    }
+
     res.json({
-      template,
+      template: { ...template, print_logo_url },
       sections: sortedSections,
     });
   } catch (err) {

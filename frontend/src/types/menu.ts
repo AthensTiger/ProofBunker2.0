@@ -21,6 +21,7 @@ export interface MenuSettings {
   show_mash_bill?: boolean;
   show_notes?: boolean;
   show_price?: boolean;
+  show_logo?: boolean;
   sort_by?: string;
 }
 
@@ -75,6 +76,6 @@ export interface MenuPreviewSection {
 }
 
 export interface MenuPreviewData {
-  template: MenuTemplate;
+  template: MenuTemplate & { print_logo_url?: string | null };
   sections: Record<string, MenuPreviewSection[]>;
 }

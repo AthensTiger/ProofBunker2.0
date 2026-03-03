@@ -19,7 +19,7 @@ export default function MenuBuilderPage() {
   const handleCreate = () => {
     if (!newName.trim()) return;
     createMutation.mutate(
-      { name: newName.trim(), settings: { columns: 2, show_abv: true, show_company: true, show_age: true, show_rating: false, show_description: false, show_tasting_notes: false, show_mash_bill: false, show_notes: false, show_price: false } },
+      { name: newName.trim(), settings: { columns: 2, show_abv: true, show_company: true, show_age: true, show_rating: false, show_description: false, show_tasting_notes: false, show_mash_bill: false, show_notes: false, show_price: false, show_logo: false } },
       {
         onSuccess: (template) => {
           setShowCreate(false);

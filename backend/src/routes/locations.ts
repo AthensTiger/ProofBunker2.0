@@ -1,7 +1,8 @@
 import { Router } from 'express';
 import jwtCheck from '../config/auth';
 import { ensureUserExists, requireEmailVerified } from '../middleware/auth';
-import { getLocations, createLocation, updateLocation, deleteLocation } from '../controllers/locationController';
+import upload from '../middleware/upload';
+import { getLocations, createLocation, updateLocation, deleteLocation, uploadLocationLogo } from '../controllers/locationController';
 import '../types';
 
 const router = Router();
@@ -12,5 +13,6 @@ router.get('/', getLocations);
 router.post('/', createLocation);
 router.put('/:id', updateLocation);
 router.delete('/:id', deleteLocation);
+router.post('/:id/logo', upload.single('logo'), uploadLocationLogo);
 
 export default router;
