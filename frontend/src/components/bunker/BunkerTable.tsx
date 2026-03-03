@@ -27,7 +27,7 @@ export default function BunkerTable({ items, showImages, onStatusAction, onDelet
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Qty</th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden lg:table-cell">Locations</th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">Status</th>
-            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase w-20"></th>
+            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase w-28">Change Status</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">

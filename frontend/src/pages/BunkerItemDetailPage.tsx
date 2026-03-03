@@ -70,16 +70,16 @@ export default function BunkerItemDetailPage() {
       <div className="space-y-6">
         <ProductInfoSection item={item} user={currentUser} />
 
-        <PersonalInfoSection
-          itemId={item.id}
-          rating={item.personal_rating}
-          notes={item.notes}
-        />
-
         <BottlesTable
           bottles={item.bottles}
           locations={locations}
           productId={item.product_id}
+        />
+
+        <PersonalInfoSection
+          itemId={item.id}
+          rating={item.personal_rating}
+          notes={item.notes}
         />
       </div>
     </div>
