@@ -8,6 +8,7 @@ export interface UserRecord {
   age_verified: boolean;
   email_verified: boolean;
   preferences: Record<string, unknown>;
+  features: { messages: boolean; posts: boolean };
   created_at: Date;
   updated_at: Date;
 }

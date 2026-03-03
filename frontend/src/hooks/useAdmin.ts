@@ -299,3 +299,15 @@ export function useSetEmailVerified() {
     },
   });
 }
+
+export function useUpdateUserFeatures() {
+  const api = useApiClient();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, features }: { id: number; features: Record<string, boolean> }) =>
+      api.put(`/admin/users/${id}/features`, { features }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'all-users'] });
+    },
+  });
+}

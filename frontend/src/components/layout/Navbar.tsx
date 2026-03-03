@@ -27,8 +27,8 @@ export default function Navbar() {
     { to: '/bunker', label: 'My Bunker', end: true },
     { to: '/menus', label: 'Print Bunker' },
     { to: '/shared', label: 'Shared With Me' },
-    { to: '/posts', label: 'Posts' },
-    { to: '/messages', label: 'Messages' },
+    ...(profile?.features?.posts ? [{ to: '/posts', label: 'Posts' }] : []),
+    ...(profile?.features?.messages ? [{ to: '/messages', label: 'Messages' }] : []),
     { to: '/support', label: 'Support' },
     ...(isAdmin ? [{ to: '/admin', label: 'Admin' }] : []),
   ];

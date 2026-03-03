@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useAllUsers, useUpdateUserRole, useSetEmailVerified } from '../../hooks/useAdmin';
+import { useAllUsers, useUpdateUserRole, useSetEmailVerified, useUpdateUserFeatures } from '../../hooks/useAdmin';
 import { useCurrentUser } from '../../hooks/useUser';
 import { useUIStore } from '../../stores/uiStore';
 
@@ -16,6 +16,7 @@ export default function AllUsersTab() {
   const [page, setPage] = useState(0);
   const updateRole = useUpdateUserRole();
   const setEmailVerified = useSetEmailVerified();
+  const updateFeatures = useUpdateUserFeatures();
 
   const { data, isLoading } = useAllUsers({ q: search || undefined, limit: 50, offset: page * 50 });
   const users = data?.users || [];
@@ -48,6 +49,18 @@ export default function AllUsersTab() {
     );
   };
 
+  const handleFeatureToggle = (userId: number, feature: string, currentValue: boolean) => {
+    updateFeatures.mutate(
+      { id: userId, features: { [feature]: !currentValue } },
+      {
+        onSuccess: () => addToast('success', `${feature.charAt(0).toUpperCase() + feature.slice(1)} ${!currentValue ? 'enabled' : 'disabled'}`),
+        onError: (err: any) => addToast('error', err?.message || 'Failed to update features'),
+      }
+    );
+  };
+
+  const FEATURE_LABELS: Record<string, string> = { posts: 'Posts', messages: 'Messages' };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-3 items-center">
@@ -75,46 +88,75 @@ export default function AllUsersTab() {
         <div className="space-y-2">
           {users.map((u: any) => {
             const isSelf = currentUser?.id === u.id;
+            const features: Record<string, boolean> = u.features || { posts: false, messages: false };
             return (
-              <div key={u.id} className="bg-white rounded-lg shadow px-4 py-3 flex items-center gap-4">
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900 truncate">
-                    {u.display_name || u.email}
-                    {isSelf && <span className="text-xs text-gray-400 ml-2">(you)</span>}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {u.email}
-                    {u.bunker_count > 0 && ` · ${u.bunker_count} item${u.bunker_count !== 1 ? 's' : ''} in bunker`}
-                  </p>
+              <div key={u.id} className="bg-white rounded-lg shadow px-4 py-3 space-y-2">
+                {/* Row 1: identity + role controls */}
+                <div className="flex items-center gap-4">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-900 truncate">
+                      {u.display_name || u.email}
+                      {isSelf && <span className="text-xs text-gray-400 ml-2">(you)</span>}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {u.email}
+                      {u.bunker_count > 0 && ` · ${u.bunker_count} item${u.bunker_count !== 1 ? 's' : ''} in bunker`}
+                    </p>
+                  </div>
+                  <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${ROLE_COLORS[u.role] || ROLE_COLORS.user}`}>
+                    {u.role}
+                  </span>
+                  {isAdmin && (
+                    <button
+                      onClick={() => handleEmailVerifiedToggle(u.id, u.display_name, u.email_verified)}
+                      disabled={setEmailVerified.isPending}
+                      title={u.email_verified ? 'Click to revoke verification' : 'Click to verify user'}
+                      className={`px-2 py-0.5 text-xs font-medium rounded-full transition-colors disabled:opacity-50 ${
+                        u.email_verified
+                          ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                          : 'bg-red-100 text-red-700 hover:bg-red-200'
+                      }`}
+                    >
+                      {u.email_verified ? 'Verified' : 'Unverified'}
+                    </button>
+                  )}
+                  {isAdmin && !isSelf && (
+                    <select
+                      value={u.role}
+                      onChange={(e) => handleRoleChange(u.id, u.display_name, e.target.value)}
+                      disabled={updateRole.isPending}
+                      className="px-2 py-1 text-xs border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 disabled:opacity-50"
+                    >
+                      <option value="user">User</option>
+                      <option value="curator">Curator</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  )}
                 </div>
-                <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${ROLE_COLORS[u.role] || ROLE_COLORS.user}`}>
-                  {u.role}
-                </span>
+
+                {/* Row 2: feature flags (admin only) */}
                 {isAdmin && (
-                  <button
-                    onClick={() => handleEmailVerifiedToggle(u.id, u.display_name, u.email_verified)}
-                    disabled={setEmailVerified.isPending}
-                    title={u.email_verified ? 'Click to revoke verification' : 'Click to verify user'}
-                    className={`px-2 py-0.5 text-xs font-medium rounded-full transition-colors disabled:opacity-50 ${
-                      u.email_verified
-                        ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                        : 'bg-red-100 text-red-700 hover:bg-red-200'
-                    }`}
-                  >
-                    {u.email_verified ? 'Verified' : 'Unverified'}
-                  </button>
-                )}
-                {isAdmin && !isSelf && (
-                  <select
-                    value={u.role}
-                    onChange={(e) => handleRoleChange(u.id, u.display_name, e.target.value)}
-                    disabled={updateRole.isPending}
-                    className="px-2 py-1 text-xs border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 disabled:opacity-50"
-                  >
-                    <option value="user">User</option>
-                    <option value="curator">Curator</option>
-                    <option value="admin">Admin</option>
-                  </select>
+                  <div className="flex items-center gap-2 flex-wrap pt-1 border-t border-gray-100">
+                    <span className="text-xs text-gray-400 mr-1">Features:</span>
+                    {Object.keys(FEATURE_LABELS).map((key) => {
+                      const enabled = !!features[key];
+                      return (
+                        <button
+                          key={key}
+                          onClick={() => handleFeatureToggle(u.id, key, enabled)}
+                          disabled={updateFeatures.isPending}
+                          title={enabled ? `Disable ${FEATURE_LABELS[key]}` : `Enable ${FEATURE_LABELS[key]}`}
+                          className={`px-2 py-0.5 text-xs font-medium rounded-full transition-colors disabled:opacity-50 ${
+                            enabled
+                              ? 'bg-amber-100 text-amber-800 hover:bg-amber-200'
+                              : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                          }`}
+                        >
+                          {FEATURE_LABELS[key]}: {enabled ? 'On' : 'Off'}
+                        </button>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
             );

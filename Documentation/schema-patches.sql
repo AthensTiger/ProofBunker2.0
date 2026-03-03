@@ -117,3 +117,12 @@ CREATE TABLE IF NOT EXISTS notifications (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, read_at);
+
+-- ================================================================
+-- Feature Flags
+-- Admin controls which optional features are enabled per user.
+-- Default OFF for new users: messages, posts.
+-- My Bunker, Print Bunker, Shared With Me, Support, Settings
+-- are always available and not controlled here.
+-- ================================================================
+ALTER TABLE users ADD COLUMN IF NOT EXISTS features JSONB NOT NULL DEFAULT '{"messages": false, "posts": false}';

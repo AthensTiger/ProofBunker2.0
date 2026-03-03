@@ -28,6 +28,7 @@ import {
   getAllUsers,
   updateUserRole,
   setEmailVerified,
+  updateUserFeatures,
 } from '../controllers/adminController';
 import '../types';
 
@@ -71,5 +72,6 @@ router.post('/distillers/:id/merge', mergeDistiller);
 router.get('/users', getAllUsers);
 router.put('/users/:id/role', updateUserRole);
 router.put('/users/:id/email-verified', setEmailVerified);
+router.put('/users/:id/features', updateUserFeatures);
 
 export default router;

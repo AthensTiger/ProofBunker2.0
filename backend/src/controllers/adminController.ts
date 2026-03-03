@@ -885,7 +885,7 @@ export async function getAllUsers(req: Request, res: Response, next: NextFunctio
 
     params.push(limit, offset);
     const result = await pool.query(
-      `SELECT u.id, u.email, u.display_name, u.role, u.age_verified, u.email_verified, u.created_at,
+      `SELECT u.id, u.email, u.display_name, u.role, u.age_verified, u.email_verified, u.features, u.created_at,
               COUNT(DISTINCT bi.id)::int AS bunker_count
        FROM users u
        LEFT JOIN bunker_items bi ON bi.user_id = u.id
@@ -962,6 +962,42 @@ export async function setEmailVerified(req: Request, res: Response, next: NextFu
       `UPDATE users SET email_verified = $1, updated_at = NOW() WHERE id = $2
        RETURNING id, email, display_name, role, email_verified`,
       [email_verified, id]
+    );
+
+    if (result.rows.length === 0) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function updateUserFeatures(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { id } = req.params;
+    const currentUser = req.user!;
+
+    if (currentUser.role !== 'admin') {
+      res.status(403).json({ error: 'Only admins can manage user features' });
+      return;
+    }
+
+    const { features } = req.body;
+    if (!features || typeof features !== 'object') {
+      res.status(400).json({ error: 'features must be an object' });
+      return;
+    }
+
+    // Merge incoming toggles into existing features (don't wipe unknown keys)
+    const result = await pool.query(
+      `UPDATE users
+       SET features = features || $1::jsonb, updated_at = NOW()
+       WHERE id = $2
+       RETURNING id, email, display_name, role, features`,
+      [JSON.stringify(features), id]
     );
 
     if (result.rows.length === 0) {
