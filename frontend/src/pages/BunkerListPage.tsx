@@ -139,39 +139,40 @@ export default function BunkerListPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Your Bunker</h1>
-        <span className="text-sm text-gray-500">
-          {filteredItems.length} {filteredItems.length === 1 ? 'item' : 'items'}
-        </span>
-      </div>
-
-      {items.length === 0 ? (
-        <BunkerEmptyState />
-      ) : (
-        <>
+      {/* Sticky header — heading + search/filter row stay visible while list scrolls */}
+      <div className="sticky top-16 z-10 bg-gray-50 pt-4 sm:pt-6 pb-3 border-b border-gray-100">
+        <div className="flex items-center justify-between mb-3">
+          <h1 className="text-2xl font-bold text-gray-900">Your Bunker</h1>
+          <span className="text-sm text-gray-500">
+            {filteredItems.length} {filteredItems.length === 1 ? 'item' : 'items'}
+          </span>
+        </div>
+        {items.length > 0 && (
           <BunkerActionRow
             searchText={searchText}
             onSearchChange={setSearchText}
             onOpenSettings={() => setSettingsOpen(true)}
             hasActiveFilters={hasActiveFilters}
           />
+        )}
+      </div>
 
-          {filteredItems.length === 0 ? (
-            <div className="text-center py-16 text-gray-500">
-              No bottles match your search.
-            </div>
-          ) : (
-            <BunkerTable
-              items={filteredItems}
-              showImages={showImages}
-              cardFields={cardFields}
-              onStatusAction={handleStatusAction}
-              onDelete={setDeleteTarget}
-              onRatingChange={handleRatingChange}
-            />
-          )}
-        </>
+      {/* Scrollable content */}
+      {items.length === 0 ? (
+        <BunkerEmptyState />
+      ) : filteredItems.length === 0 ? (
+        <div className="text-center py-16 text-gray-500">
+          No bottles match your search.
+        </div>
+      ) : (
+        <BunkerTable
+          items={filteredItems}
+          showImages={showImages}
+          cardFields={cardFields}
+          onStatusAction={handleStatusAction}
+          onDelete={setDeleteTarget}
+          onRatingChange={handleRatingChange}
+        />
       )}
 
       <BunkerSettingsDialog

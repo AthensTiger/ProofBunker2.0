@@ -107,21 +107,22 @@ export default function PostsPage() {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Community Posts</h1>
-        {tab === 'mine' && !showEditor && (
-          <button
-            onClick={openNew}
-            className="px-3 py-1.5 bg-amber-700 text-white text-sm font-medium rounded-lg hover:bg-amber-800 transition-colors"
-          >
-            New Post
-          </button>
-        )}
-      </div>
+    <div>
+      {/* Sticky header — title + tabs stay visible while content scrolls */}
+      <div className="sticky top-16 z-10 bg-gray-50 pt-4 sm:pt-6 pb-0 border-b border-gray-200">
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-2xl font-bold text-gray-900">Community Posts</h1>
+          {tab === 'mine' && !showEditor && (
+            <button
+              onClick={openNew}
+              className="px-3 py-1.5 bg-amber-700 text-white text-sm font-medium rounded-lg hover:bg-amber-800 transition-colors"
+            >
+              New Post
+            </button>
+          )}
+        </div>
 
-      {/* Tabs */}
-      <div className="border-b border-gray-200">
+        {/* Tabs */}
         <nav className="flex gap-6">
           {(['community', 'mine'] as Tab[]).map((t) => (
             <button
@@ -147,6 +148,8 @@ export default function PostsPage() {
           ))}
         </nav>
       </div>
+
+      <div className="space-y-4 pt-4">
 
       {/* Community feed */}
       {tab === 'community' && (
@@ -251,6 +254,7 @@ export default function PostsPage() {
           )}
         </div>
       )}
+      </div>
     </div>
   );
 }

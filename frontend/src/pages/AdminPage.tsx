@@ -41,27 +41,30 @@ export default function AdminPage() {
   const [tab, setTab] = useState<Tab>('pending-products');
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-
-      {/* Tabs */}
-      <div className="border-b border-gray-200 overflow-x-auto">
-        <nav className="flex gap-4 min-w-max">
-          {TABS.map(([key, label]) => (
-            <button
-              key={key}
-              onClick={() => setTab(key)}
-              className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
-                tab === key
-                  ? 'border-amber-700 text-amber-800'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </nav>
+    <div>
+      {/* Sticky header — title + tabs stay visible while content scrolls */}
+      <div className="sticky top-16 z-10 bg-gray-50 pt-4 sm:pt-6 pb-0 border-b border-gray-200">
+        <h1 className="text-2xl font-bold text-gray-900 mb-4">Admin Dashboard</h1>
+        <div className="overflow-x-auto">
+          <nav className="flex gap-4 min-w-max">
+            {TABS.map(([key, label]) => (
+              <button
+                key={key}
+                onClick={() => setTab(key)}
+                className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                  tab === key
+                    ? 'border-amber-700 text-amber-800'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </nav>
+        </div>
       </div>
+
+      <div className="pt-6">
 
       {tab === 'pending-products' && <PendingProductsTab />}
       {tab === 'all-products' && <AllProductsTab />}
@@ -73,6 +76,7 @@ export default function AdminPage() {
       {tab === 'support-tickets' && <SupportTicketsTab />}
       {tab === 'posts-approval' && <PostsApprovalTab />}
       {tab === 'release-notes' && <ReleaseNotesTab />}
+      </div>
     </div>
   );
 }
