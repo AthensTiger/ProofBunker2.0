@@ -1,12 +1,13 @@
 import { useNavigate } from 'react-router-dom';
 import { Virtuoso } from 'react-virtuoso';
-import type { BunkerListItem } from '../../types/bunker';
+import type { BunkerListItem, BunkerCardFields } from '../../types/bunker';
 import StarRatingInput from '../ui/StarRatingInput';
 import Badge from '../ui/Badge';
 
 interface BunkerTableProps {
   items: BunkerListItem[];
   showImages: boolean;
+  cardFields: BunkerCardFields;
   onStatusAction: (bottleId: number, newStatus: 'opened' | 'empty') => void;
   onDelete: (item: BunkerListItem) => void;
   onRatingChange: (itemId: number, rating: number | null) => void;
@@ -41,6 +42,7 @@ function rowKey(item: BunkerListItem): string {
 function BunkerCard({
   item,
   showImages,
+  cardFields,
   onStatusAction,
   onDelete,
   onRatingChange,
@@ -48,12 +50,27 @@ function BunkerCard({
 }: {
   item: BunkerListItem;
   showImages: boolean;
+  cardFields: BunkerCardFields;
   onStatusAction: (bottleId: number, newStatus: 'opened' | 'empty') => void;
   onDelete: (item: BunkerListItem) => void;
   onRatingChange: (itemId: number, rating: number | null) => void;
   navigate: ReturnType<typeof useNavigate>;
 }) {
   const detailSummary = buildDetailSummary(item);
+
+  // Build meta chips based on visible fields
+  const metaParts: string[] = [];
+  if (cardFields.show_company && item.company_name) metaParts.push(item.company_name);
+  if (cardFields.show_type) {
+    if (item.spirit_subtype) metaParts.push(`${item.spirit_subtype} (${item.spirit_type})`);
+    else if (item.spirit_type) metaParts.push(item.spirit_type);
+  }
+  if (cardFields.show_abv && item.abv != null) {
+    metaParts.push(`${parseFloat((Number(item.abv) * 100).toFixed(1))}%`);
+  }
+  if (cardFields.show_location && item.location_names.length > 0) {
+    metaParts.push(item.location_names.join(', '));
+  }
 
   return (
     <div
@@ -89,7 +106,7 @@ function BunkerCard({
                 {item.approval_status === 'pending' && <Badge variant="pending">Pending</Badge>}
                 {item.approval_status === 'rejected' && <Badge variant="rejected">Rejected</Badge>}
               </div>
-              {detailSummary && (
+              {cardFields.show_details && detailSummary && (
                 <p className="text-xs text-gray-400 mt-0.5 leading-snug">{detailSummary}</p>
               )}
             </div>
@@ -129,50 +146,42 @@ function BunkerCard({
           </div>
 
           {/* Meta row */}
-          <div className="flex items-center gap-2 flex-wrap text-xs text-gray-500 mb-2">
-            {item.company_name && <span>{item.company_name}</span>}
-            {item.spirit_subtype ? (
-              <span className="capitalize">
-                {item.spirit_subtype}{' '}
-                <span className="text-gray-400">({item.spirit_type})</span>
-              </span>
-            ) : item.spirit_type ? (
-              <span className="capitalize">{item.spirit_type}</span>
-            ) : null}
-            {item.abv != null && (
-              <span>{parseFloat((Number(item.abv) * 100).toFixed(1))}%</span>
-            )}
-            {item.location_names.length > 0 && (
-              <span className="text-gray-400">{item.location_names.join(', ')}</span>
-            )}
-            {item.statuses.length > 0 && (
-              <span className={`capitalize font-medium ${
-                item.primary_status === 'sealed'
-                  ? 'text-green-600'
-                  : item.primary_status === 'opened'
-                  ? 'text-blue-600'
-                  : 'text-gray-400'
-              }`}>
-                {item.statuses.join(', ')}
-              </span>
-            )}
-          </div>
+          {(metaParts.length > 0 || cardFields.show_status) && (
+            <div className="flex items-center gap-2 flex-wrap text-xs text-gray-500 mb-2">
+              {metaParts.map((part, i) => (
+                <span key={i}>{part}</span>
+              ))}
+              {cardFields.show_status && item.statuses.length > 0 && (
+                <span className={`capitalize font-medium ${
+                  item.primary_status === 'sealed'
+                    ? 'text-green-600'
+                    : item.primary_status === 'opened'
+                    ? 'text-blue-600'
+                    : 'text-gray-400'
+                }`}>
+                  {item.statuses.join(', ')}
+                </span>
+              )}
+            </div>
+          )}
 
-          {/* Rating row */}
-          <div onClick={(e) => e.stopPropagation()}>
-            <StarRatingInput
-              rating={item.personal_rating}
-              onChange={(r) => onRatingChange(item.id, r)}
-              size="sm"
-            />
-          </div>
+          {/* Rating */}
+          {cardFields.show_rating && (
+            <div onClick={(e) => e.stopPropagation()}>
+              <StarRatingInput
+                rating={item.personal_rating}
+                onChange={(r) => onRatingChange(item.id, r)}
+                size="sm"
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-export default function BunkerTable({ items, showImages, onStatusAction, onDelete, onRatingChange }: BunkerTableProps) {
+export default function BunkerTable({ items, showImages, cardFields, onStatusAction, onDelete, onRatingChange }: BunkerTableProps) {
   const navigate = useNavigate();
 
   return (
@@ -184,6 +193,7 @@ export default function BunkerTable({ items, showImages, onStatusAction, onDelet
         <BunkerCard
           item={item}
           showImages={showImages}
+          cardFields={cardFields}
           onStatusAction={onStatusAction}
           onDelete={onDelete}
           onRatingChange={onRatingChange}

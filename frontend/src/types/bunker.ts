@@ -96,6 +96,16 @@ export interface BunkerFilters {
   sort_dir?: 'asc' | 'desc';
 }
 
+export interface BunkerCardFields {
+  show_details: boolean;   // batch/barrel/proof/age/etc. summary line
+  show_company: boolean;
+  show_type: boolean;
+  show_abv: boolean;
+  show_location: boolean;
+  show_status: boolean;
+  show_rating: boolean;
+}
+
 export interface AddToBunkerRequest {
   product_id: number;
   storage_location_id?: number | null;

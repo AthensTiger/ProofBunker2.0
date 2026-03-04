@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import type { StorageLocation } from '../../types/location';
 import type { SpiritTypeCount } from '../../types/product';
-import type { BunkerFilters } from '../../types/bunker';
+import type { BunkerFilters, BunkerCardFields } from '../../types/bunker';
 
 interface BunkerActionRowProps {
   searchText: string;
@@ -10,9 +10,21 @@ interface BunkerActionRowProps {
   onFilterChange: (filters: Partial<BunkerFilters>) => void;
   showImages: boolean;
   onToggleImages: () => void;
+  cardFields: BunkerCardFields;
+  onCardFieldToggle: (field: keyof BunkerCardFields) => void;
   locations: StorageLocation[];
   spiritTypes: SpiritTypeCount[];
 }
+
+const CARD_FIELD_LABELS: { key: keyof BunkerCardFields; label: string }[] = [
+  { key: 'show_details',  label: 'Details' },
+  { key: 'show_company',  label: 'Company' },
+  { key: 'show_type',     label: 'Spirit Type' },
+  { key: 'show_abv',      label: 'ABV' },
+  { key: 'show_location', label: 'Location' },
+  { key: 'show_status',   label: 'Status' },
+  { key: 'show_rating',   label: 'Rating' },
+];
 
 export default function BunkerActionRow({
   searchText,
@@ -21,9 +33,13 @@ export default function BunkerActionRow({
   onFilterChange,
   showImages,
   onToggleImages,
+  cardFields,
+  onCardFieldToggle,
   locations,
   spiritTypes,
 }: BunkerActionRowProps) {
+  const hiddenFieldCount = CARD_FIELD_LABELS.filter(({ key }) => !cardFields[key]).length;
+
   return (
     <div className="flex flex-wrap items-center gap-3 mb-4">
       <Link
@@ -73,6 +89,7 @@ export default function BunkerActionRow({
         ))}
       </select>
 
+      {/* Status filter */}
       <div className="relative">
         <button
           onClick={(e) => {
@@ -123,6 +140,36 @@ export default function BunkerActionRow({
       >
         {filters.sort_dir === 'desc' ? '\u2193' : '\u2191'}
       </button>
+
+      {/* Fields toggle */}
+      <div className="relative">
+        <button
+          onClick={(e) => {
+            const menu = (e.currentTarget.nextElementSibling as HTMLElement);
+            menu.classList.toggle('hidden');
+          }}
+          className={`px-3 py-2 border rounded-lg text-sm transition-colors whitespace-nowrap ${
+            hiddenFieldCount > 0
+              ? 'bg-amber-100 border-amber-300 text-amber-800'
+              : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'
+          }`}
+        >
+          Fields{hiddenFieldCount > 0 ? ` (${hiddenFieldCount} hidden)` : ''}
+        </button>
+        <div className="hidden absolute top-full right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10 p-2 min-w-[160px]">
+          {CARD_FIELD_LABELS.map(({ key, label }) => (
+            <label key={key} className="flex items-center gap-2 px-2 py-1.5 text-sm cursor-pointer hover:bg-gray-50 rounded">
+              <input
+                type="checkbox"
+                checked={cardFields[key]}
+                onChange={() => onCardFieldToggle(key)}
+                className="rounded border-gray-300 text-amber-700 focus:ring-amber-500"
+              />
+              {label}
+            </label>
+          ))}
+        </div>
+      </div>
 
       <button
         onClick={onToggleImages}

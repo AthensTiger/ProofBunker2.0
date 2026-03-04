@@ -3,7 +3,7 @@ import { useBunkerList, useUpdateBottle, useUpdateBunkerItem, useRemoveBunkerIte
 import { useLocations } from '../hooks/useLocations';
 import { useSpiritTypes } from '../hooks/useProducts';
 import { useUIStore } from '../stores/uiStore';
-import type { BunkerFilters, BunkerListItem } from '../types/bunker';
+import type { BunkerFilters, BunkerCardFields, BunkerListItem } from '../types/bunker';
 import Dialog from '../components/ui/Dialog';
 import BunkerActionRow from '../components/bunker/BunkerActionRow';
 import BunkerTable from '../components/bunker/BunkerTable';
@@ -11,6 +11,17 @@ import BunkerEmptyState from '../components/bunker/BunkerEmptyState';
 
 const FILTERS_KEY = 'pb_bunker_filters';
 const IMAGES_KEY = 'pb_bunker_show_images';
+const FIELDS_KEY = 'pb_bunker_card_fields';
+
+const DEFAULT_CARD_FIELDS: BunkerCardFields = {
+  show_details: true,
+  show_company: true,
+  show_type: true,
+  show_abv: true,
+  show_location: true,
+  show_status: true,
+  show_rating: true,
+};
 
 function loadFilters(): BunkerFilters {
   try {
@@ -20,11 +31,20 @@ function loadFilters(): BunkerFilters {
   return { sort_by: 'name', sort_dir: 'asc' };
 }
 
+function loadCardFields(): BunkerCardFields {
+  try {
+    const stored = localStorage.getItem(FIELDS_KEY);
+    if (stored) return { ...DEFAULT_CARD_FIELDS, ...JSON.parse(stored) };
+  } catch {}
+  return DEFAULT_CARD_FIELDS;
+}
+
 export default function BunkerListPage() {
   const addToast = useUIStore((s) => s.addToast);
   const [searchText, setSearchText] = useState('');
   const [showImages, setShowImages] = useState(() => localStorage.getItem(IMAGES_KEY) === '1');
   const [filters, setFilters] = useState<BunkerFilters>(loadFilters);
+  const [cardFields, setCardFields] = useState<BunkerCardFields>(loadCardFields);
   const [deleteTarget, setDeleteTarget] = useState<BunkerListItem | null>(null);
 
   const handleFilterChange = (partial: Partial<BunkerFilters>) => {
@@ -40,6 +60,14 @@ export default function BunkerListPage() {
       const next = !prev;
       if (next) localStorage.setItem(IMAGES_KEY, '1');
       else localStorage.removeItem(IMAGES_KEY);
+      return next;
+    });
+  };
+
+  const handleCardFieldToggle = (field: keyof BunkerCardFields) => {
+    setCardFields((prev) => {
+      const next = { ...prev, [field]: !prev[field] };
+      localStorage.setItem(FIELDS_KEY, JSON.stringify(next));
       return next;
     });
   };
@@ -115,6 +143,8 @@ export default function BunkerListPage() {
             onFilterChange={handleFilterChange}
             showImages={showImages}
             onToggleImages={handleToggleImages}
+            cardFields={cardFields}
+            onCardFieldToggle={handleCardFieldToggle}
             locations={locations}
             spiritTypes={spiritTypes}
           />
@@ -127,6 +157,7 @@ export default function BunkerListPage() {
             <BunkerTable
               items={filteredItems}
               showImages={showImages}
+              cardFields={cardFields}
               onStatusAction={handleStatusAction}
               onDelete={setDeleteTarget}
               onRatingChange={handleRatingChange}
