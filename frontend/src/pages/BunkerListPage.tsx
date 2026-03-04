@@ -6,6 +6,7 @@ import { useUIStore } from '../stores/uiStore';
 import type { BunkerFilters, BunkerCardFields, BunkerListItem } from '../types/bunker';
 import Dialog from '../components/ui/Dialog';
 import BunkerActionRow from '../components/bunker/BunkerActionRow';
+import BunkerSettingsDialog from '../components/bunker/BunkerSettingsDialog';
 import BunkerTable from '../components/bunker/BunkerTable';
 import BunkerEmptyState from '../components/bunker/BunkerEmptyState';
 
@@ -18,9 +19,12 @@ const DEFAULT_CARD_FIELDS: BunkerCardFields = {
   show_company: true,
   show_type: true,
   show_abv: true,
+  show_mash_bill: false,
   show_location: true,
   show_status: true,
   show_rating: true,
+  show_description: false,
+  show_notes: false,
 };
 
 function loadFilters(): BunkerFilters {
@@ -45,6 +49,7 @@ export default function BunkerListPage() {
   const [showImages, setShowImages] = useState(() => localStorage.getItem(IMAGES_KEY) === '1');
   const [filters, setFilters] = useState<BunkerFilters>(loadFilters);
   const [cardFields, setCardFields] = useState<BunkerCardFields>(loadCardFields);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<BunkerListItem | null>(null);
 
   const handleFilterChange = (partial: Partial<BunkerFilters>) => {
@@ -71,6 +76,15 @@ export default function BunkerListPage() {
       return next;
     });
   };
+
+  const hasActiveFilters = !!(
+    filters.spirit_type ||
+    filters.location_id ||
+    filters.statuses?.length ||
+    showImages ||
+    (filters.sort_by && filters.sort_by !== 'name') ||
+    filters.sort_dir === 'desc'
+  );
 
   const { data: items = [], isLoading } = useBunkerList(filters);
   const { data: locations = [] } = useLocations();
@@ -139,14 +153,8 @@ export default function BunkerListPage() {
           <BunkerActionRow
             searchText={searchText}
             onSearchChange={setSearchText}
-            filters={filters}
-            onFilterChange={handleFilterChange}
-            showImages={showImages}
-            onToggleImages={handleToggleImages}
-            cardFields={cardFields}
-            onCardFieldToggle={handleCardFieldToggle}
-            locations={locations}
-            spiritTypes={spiritTypes}
+            onOpenSettings={() => setSettingsOpen(true)}
+            hasActiveFilters={hasActiveFilters}
           />
 
           {filteredItems.length === 0 ? (
@@ -165,6 +173,19 @@ export default function BunkerListPage() {
           )}
         </>
       )}
+
+      <BunkerSettingsDialog
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        filters={filters}
+        onFilterChange={handleFilterChange}
+        showImages={showImages}
+        onToggleImages={handleToggleImages}
+        cardFields={cardFields}
+        onCardFieldToggle={handleCardFieldToggle}
+        locations={locations}
+        spiritTypes={spiritTypes}
+      />
 
       <Dialog
         open={!!deleteTarget}

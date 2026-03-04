@@ -1,61 +1,34 @@
 import { Link } from 'react-router-dom';
-import type { StorageLocation } from '../../types/location';
-import type { SpiritTypeCount } from '../../types/product';
-import type { BunkerFilters, BunkerCardFields } from '../../types/bunker';
 
 interface BunkerActionRowProps {
   searchText: string;
   onSearchChange: (text: string) => void;
-  filters: BunkerFilters;
-  onFilterChange: (filters: Partial<BunkerFilters>) => void;
-  showImages: boolean;
-  onToggleImages: () => void;
-  cardFields: BunkerCardFields;
-  onCardFieldToggle: (field: keyof BunkerCardFields) => void;
-  locations: StorageLocation[];
-  spiritTypes: SpiritTypeCount[];
+  onOpenSettings: () => void;
+  hasActiveFilters: boolean;
 }
-
-const CARD_FIELD_LABELS: { key: keyof BunkerCardFields; label: string }[] = [
-  { key: 'show_details',  label: 'Details' },
-  { key: 'show_company',  label: 'Company' },
-  { key: 'show_type',     label: 'Spirit Type' },
-  { key: 'show_abv',      label: 'ABV' },
-  { key: 'show_location', label: 'Location' },
-  { key: 'show_status',   label: 'Status' },
-  { key: 'show_rating',   label: 'Rating' },
-];
 
 export default function BunkerActionRow({
   searchText,
   onSearchChange,
-  filters,
-  onFilterChange,
-  showImages,
-  onToggleImages,
-  cardFields,
-  onCardFieldToggle,
-  locations,
-  spiritTypes,
+  onOpenSettings,
+  hasActiveFilters,
 }: BunkerActionRowProps) {
-  const hiddenFieldCount = CARD_FIELD_LABELS.filter(({ key }) => !cardFields[key]).length;
-
   return (
-    <div className="flex flex-wrap items-center gap-3 mb-4">
+    <div className="flex items-center gap-3 mb-4">
       <Link
         to="/add-bottle"
-        className="bg-amber-700 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-amber-800 transition-colors"
+        className="bg-amber-700 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-amber-800 transition-colors whitespace-nowrap"
       >
         Add Bottle
       </Link>
       <Link
         to="/batch-entry"
-        className="border border-amber-700 text-amber-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-amber-50 transition-colors"
+        className="border border-amber-700 text-amber-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-amber-50 transition-colors whitespace-nowrap"
       >
         Batch Scan
       </Link>
 
-      <div className="flex-1 min-w-[200px]">
+      <div className="flex-1 min-w-0">
         <input
           type="text"
           placeholder="Search bottles..."
@@ -65,120 +38,21 @@ export default function BunkerActionRow({
         />
       </div>
 
-      <select
-        value={filters.spirit_type || ''}
-        onChange={(e) => onFilterChange({ spirit_type: e.target.value || undefined })}
-        className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
-      >
-        <option value="">All Types</option>
-        {spiritTypes.map((st) => (
-          <option key={st.spirit_type} value={st.spirit_type}>
-            {st.spirit_type.charAt(0).toUpperCase() + st.spirit_type.slice(1)} ({st.count})
-          </option>
-        ))}
-      </select>
-
-      <select
-        value={filters.location_id || ''}
-        onChange={(e) => onFilterChange({ location_id: e.target.value ? Number(e.target.value) : undefined })}
-        className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
-      >
-        <option value="">All Locations</option>
-        {locations.map((loc) => (
-          <option key={loc.id} value={loc.id}>{loc.name}</option>
-        ))}
-      </select>
-
-      {/* Status filter */}
-      <div className="relative">
-        <button
-          onClick={(e) => {
-            const menu = (e.currentTarget.nextElementSibling as HTMLElement);
-            menu.classList.toggle('hidden');
-          }}
-          className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white hover:bg-gray-50 whitespace-nowrap"
-        >
-          Status{filters.statuses?.length ? ` (${filters.statuses.length})` : ': All'}
-        </button>
-        <div className="hidden absolute top-full left-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10 p-2 min-w-[140px]">
-          {(['sealed', 'opened', 'empty'] as const).map((s) => (
-            <label key={s} className="flex items-center gap-2 px-2 py-1.5 text-sm cursor-pointer hover:bg-gray-50 rounded capitalize">
-              <input
-                type="checkbox"
-                checked={filters.statuses?.includes(s) ?? false}
-                onChange={() => {
-                  const current = filters.statuses || [];
-                  const next = current.includes(s)
-                    ? current.filter((v) => v !== s)
-                    : [...current, s];
-                  onFilterChange({ statuses: next.length ? next : undefined });
-                }}
-                className="rounded border-gray-300 text-amber-700 focus:ring-amber-500"
-              />
-              {s}
-            </label>
-          ))}
-        </div>
-      </div>
-
-      <select
-        value={filters.sort_by || 'name'}
-        onChange={(e) => onFilterChange({ sort_by: e.target.value })}
-        className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
-      >
-        <option value="name">Name</option>
-        <option value="spirit_type">Spirit Type</option>
-        <option value="proof">Proof</option>
-        <option value="rating">Rating</option>
-        <option value="created_at">Date Added</option>
-      </select>
-
+      {/* Settings gear */}
       <button
-        onClick={() => onFilterChange({ sort_dir: filters.sort_dir === 'desc' ? 'asc' : 'desc' })}
-        className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white hover:bg-gray-50"
-        title={filters.sort_dir === 'desc' ? 'Descending' : 'Ascending'}
-      >
-        {filters.sort_dir === 'desc' ? '\u2193' : '\u2191'}
-      </button>
-
-      {/* Fields toggle */}
-      <div className="relative">
-        <button
-          onClick={(e) => {
-            const menu = (e.currentTarget.nextElementSibling as HTMLElement);
-            menu.classList.toggle('hidden');
-          }}
-          className={`px-3 py-2 border rounded-lg text-sm transition-colors whitespace-nowrap ${
-            hiddenFieldCount > 0
-              ? 'bg-amber-100 border-amber-300 text-amber-800'
-              : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'
-          }`}
-        >
-          Fields{hiddenFieldCount > 0 ? ` (${hiddenFieldCount} hidden)` : ''}
-        </button>
-        <div className="hidden absolute top-full right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10 p-2 min-w-[160px]">
-          {CARD_FIELD_LABELS.map(({ key, label }) => (
-            <label key={key} className="flex items-center gap-2 px-2 py-1.5 text-sm cursor-pointer hover:bg-gray-50 rounded">
-              <input
-                type="checkbox"
-                checked={cardFields[key]}
-                onChange={() => onCardFieldToggle(key)}
-                className="rounded border-gray-300 text-amber-700 focus:ring-amber-500"
-              />
-              {label}
-            </label>
-          ))}
-        </div>
-      </div>
-
-      <button
-        onClick={onToggleImages}
-        className={`px-3 py-2 border rounded-lg text-sm transition-colors ${
-          showImages ? 'bg-amber-100 border-amber-300 text-amber-800' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'
+        onClick={onOpenSettings}
+        title="List settings"
+        className={`p-2 rounded-lg border transition-colors ${
+          hasActiveFilters
+            ? 'bg-amber-100 border-amber-300 text-amber-800'
+            : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'
         }`}
-        title="Toggle images"
       >
-        IMG
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round"
+            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
       </button>
     </div>
   );

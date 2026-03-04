@@ -21,6 +21,7 @@ export interface BunkerListItem {
   barrel_number: string | null;
   year_distilled: number | null;
   approval_status: 'approved' | 'pending' | 'rejected';
+  description: string | null;
   company_name: string | null;
   image_url: string | null;
   bottle_count: number;
@@ -31,7 +32,6 @@ export interface BunkerListItem {
 }
 
 export interface BunkerItemDetail extends BunkerListItem {
-  description: string | null;
   volume_ml: number | null;
   msrp_usd: number | null;
   mash_bill: string | null;
@@ -97,13 +97,16 @@ export interface BunkerFilters {
 }
 
 export interface BunkerCardFields {
-  show_details: boolean;   // batch/barrel/proof/age/etc. summary line
+  show_details: boolean;      // batch/barrel/year distilled/proof/age/release year summary line
   show_company: boolean;
   show_type: boolean;
   show_abv: boolean;
+  show_mash_bill: boolean;
   show_location: boolean;
   show_status: boolean;
   show_rating: boolean;
+  show_description: boolean;
+  show_notes: boolean;
 }
 
 export interface AddToBunkerRequest {

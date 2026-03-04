@@ -58,7 +58,7 @@ export async function getBunkerList(req: Request, res: Response, next: NextFunct
     // by PostgreSQL GROUP BY, so two bottles with no batch number stay together.
     const result = await pool.query(
       `SELECT bi.id, bi.product_id, bi.personal_rating, bi.notes, bi.created_at,
-              p.name, p.slug, p.spirit_type, p.spirit_subtype, p.approval_status,
+              p.name, p.slug, p.spirit_type, p.spirit_subtype, p.approval_status, p.description,
               c.name AS company_name,
               COALESCE(pi.cdn_url, (
                 SELECT bp.cdn_url FROM bunker_bottles bb2

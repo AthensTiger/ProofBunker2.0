@@ -159,6 +159,21 @@ function BunkerCard({
             </div>
           )}
 
+          {/* Mash Bill */}
+          {cardFields.show_mash_bill && item.mash_bill && (
+            <p className="text-xs text-gray-500 mb-1">Mash: {item.mash_bill}</p>
+          )}
+
+          {/* Description */}
+          {cardFields.show_description && item.description && (
+            <p className="text-xs text-gray-500 mb-1 line-clamp-2">{item.description}</p>
+          )}
+
+          {/* Personal Notes */}
+          {cardFields.show_notes && item.notes && (
+            <p className="text-xs text-gray-500 italic mb-1 line-clamp-2">{item.notes}</p>
+          )}
+
           {/* Rating */}
           {cardFields.show_rating && (
             <div onClick={(e) => e.stopPropagation()}>
