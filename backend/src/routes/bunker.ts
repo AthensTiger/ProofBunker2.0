@@ -14,11 +14,27 @@ import {
   uploadBottlePhotoFromUrl,
   deleteBottlePhoto,
 } from '../controllers/bunkerController';
+import {
+  getUnresolvedCount,
+  getUnresolvedScans,
+  createUnresolvedScan,
+  uploadUnresolvedScanPhoto,
+  resolveUnresolvedScan,
+  deleteUnresolvedScan,
+} from '../controllers/unresolvedScansController';
 import '../types';
 
 const router = Router();
 
 router.use(jwtCheck as any, ensureUserExists, requireEmailVerified);
+
+// Unresolved barcode scans — static paths must come before /:id
+router.get('/unresolved/count',         getUnresolvedCount);
+router.get('/unresolved',               getUnresolvedScans);
+router.post('/unresolved',              createUnresolvedScan);
+router.post('/unresolved/:id/photos',   upload.single('photo'), uploadUnresolvedScanPhoto);
+router.post('/unresolved/:id/resolve',  resolveUnresolvedScan);
+router.delete('/unresolved/:id',        deleteUnresolvedScan);
 
 // Bottles (physical bottle-level) — static paths before :id params
 router.put('/bottles/:bottleId', updateBottle);

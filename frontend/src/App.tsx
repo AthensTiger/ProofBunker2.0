@@ -18,6 +18,7 @@ import VerifyEmailPage from './pages/VerifyEmailPage';
 import MessagesPage from './pages/MessagesPage';
 import PostsPage from './pages/PostsPage';
 import ReleaseNotesPage from './pages/ReleaseNotesPage';
+import UnresolvedScansPage from './pages/UnresolvedScansPage';
 
 const router = createBrowserRouter([
   {
@@ -40,6 +41,7 @@ const router = createBrowserRouter([
       { path: 'messages', element: <MessagesPage /> },
       { path: 'posts', element: <PostsPage /> },
       { path: 'whats-new', element: <ReleaseNotesPage /> },
+      { path: 'bunker/unresolved', element: <UnresolvedScansPage /> },
     ],
   },
   { path: '/login', element: <LoginPage /> },

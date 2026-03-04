@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiClient } from '../api/client';
-import type { BunkerListItem, BunkerItemDetail, BunkerFilters, AddToBunkerRequest, AddToBunkerResponse } from '../types/bunker';
+import type { BunkerListItem, BunkerItemDetail, BunkerFilters, AddToBunkerRequest, AddToBunkerResponse, UnresolvedScan } from '../types/bunker';
 
 export function useBunkerList(filters: BunkerFilters) {
   const api = useApiClient();
@@ -145,6 +145,76 @@ export function useDeleteBottlePhoto() {
     mutationFn: (photoId: number) => api.del(`/bunker/photos/${photoId}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bunker'] });
+    },
+  });
+}
+
+// ── Unresolved Barcode Scans ──────────────────────────
+
+export function useUnresolvedCount() {
+  const api = useApiClient();
+  return useQuery({
+    queryKey: ['bunker', 'unresolved', 'count'],
+    queryFn: () => api.get<{ count: number }>('/bunker/unresolved/count'),
+    staleTime: 60_000,
+  });
+}
+
+export function useUnresolvedScans() {
+  const api = useApiClient();
+  return useQuery({
+    queryKey: ['bunker', 'unresolved'],
+    queryFn: () => api.get<UnresolvedScan[]>('/bunker/unresolved'),
+  });
+}
+
+export function useCreateUnresolvedScan() {
+  const api = useApiClient();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { upc: string; storage_location_id?: number | null; notes?: string }) =>
+      api.post<UnresolvedScan>('/bunker/unresolved', body),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bunker', 'unresolved'] });
+    },
+  });
+}
+
+export function useUploadUnresolvedScanPhoto() {
+  const api = useApiClient();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, file }: { id: number; file: File }) => {
+      const formData = new FormData();
+      formData.append('photo', file);
+      return api.postFormData(`/bunker/unresolved/${id}/photos`, formData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bunker', 'unresolved'] });
+    },
+  });
+}
+
+export function useResolveUnresolvedScan() {
+  const api = useApiClient();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, product_id, storage_location_id }: { id: number; product_id: number; storage_location_id?: number | null }) =>
+      api.post<{ bunker_item_id: number; bottle_id: number }>(`/bunker/unresolved/${id}/resolve`, { product_id, storage_location_id }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bunker'] });
+      queryClient.invalidateQueries({ queryKey: ['bunker', 'unresolved'] });
+    },
+  });
+}
+
+export function useDeleteUnresolvedScan() {
+  const api = useApiClient();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => api.del(`/bunker/unresolved/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bunker', 'unresolved'] });
     },
   });
 }

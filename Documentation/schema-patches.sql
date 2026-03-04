@@ -196,3 +196,28 @@ ALTER TABLE bunker_bottles ADD COLUMN IF NOT EXISTS proof          DOUBLE PRECIS
 ALTER TABLE bunker_bottles ADD COLUMN IF NOT EXISTS abv            DECIMAL(5,4);
 ALTER TABLE bunker_bottles ADD COLUMN IF NOT EXISTS age_statement  VARCHAR(100);
 ALTER TABLE bunker_bottles ADD COLUMN IF NOT EXISTS mash_bill      VARCHAR(500);
+
+-- ================================================================
+-- Unresolved Bottle Scans — Deferred Barcode Resolution
+-- When a scanned UPC has no product match, save the raw barcode
+-- + location + photos here. Resolve to a real bottle later.
+-- ================================================================
+CREATE TABLE IF NOT EXISTS unresolved_bottle_scans (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  upc VARCHAR(50) NOT NULL,
+  storage_location_id INTEGER REFERENCES user_storage_locations(id) ON DELETE SET NULL,
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_unresolved_scans_user
+  ON unresolved_bottle_scans(user_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS unresolved_scan_photos (
+  id SERIAL PRIMARY KEY,
+  scan_id INTEGER NOT NULL REFERENCES unresolved_bottle_scans(id) ON DELETE CASCADE,
+  cdn_url VARCHAR(1000) NOT NULL,
+  display_order INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);

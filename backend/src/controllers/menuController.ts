@@ -211,8 +211,9 @@ export async function getMenuPreview(req: Request, res: Response, next: NextFunc
     const settings = template.settings || {};
     const collapse = settings.collapse_identical_bottles !== false; // default true
     const groupByLoc = settings.group_by_location === true;
-    // When grouping by location, include location name in the collapse fingerprint
-    const locGroupCol = groupByLoc ? `COALESCE(usl.name, 'No Location'),` : '';
+    // Always include location in GROUP BY — location_name is in every SELECT, and
+    // bottles at different locations should never collapse into the same row.
+    const locGroupCol = `COALESCE(usl.name, 'No Location'),`;
 
     // Persistent filter rules saved in settings
     const filterStatuses: string[]  = settings.filter_statuses  || [];

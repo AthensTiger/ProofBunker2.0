@@ -11,8 +11,9 @@ import ProductSearch from '../components/add-bottle/ProductSearch';
 import ManualUpcInput from '../components/add-bottle/ManualUpcInput';
 import BottleDetailsForm from '../components/add-bottle/BottleDetailsForm';
 import SubmitNewProductForm from '../components/add-bottle/SubmitNewProductForm';
+import SaveForLaterForm from '../components/add-bottle/SaveForLaterForm';
 
-type Step = 'search' | 'details' | 'submit-new';
+type Step = 'search' | 'details' | 'save-or-submit' | 'submit-new';
 
 export default function AddBottlePage() {
   const navigate = useNavigate();
@@ -53,7 +54,7 @@ export default function AddBottlePage() {
 
   const handleUpcNotFound = (upc: string) => {
     setUnknownUpc(upc);
-    setStep('submit-new');
+    setStep('save-or-submit');
   };
 
   const handleAddToBundle = (details: {
@@ -192,6 +193,24 @@ export default function AddBottlePage() {
             productName={selectedProduct.name}
             productDetail={productDetail ?? null}
           />
+        </div>
+      )}
+
+      {step === 'save-or-submit' && (
+        <div className="space-y-5">
+          <div className="flex items-center gap-2 text-sm text-gray-600 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+            <span className="font-mono bg-white border border-amber-200 px-2 py-0.5 rounded text-amber-800 text-xs">{unknownUpc}</span>
+            <span>wasn't found in the product database.</span>
+          </div>
+          <div>
+            <h2 className="text-base font-semibold text-gray-900 mb-1">Save for Later</h2>
+            <p className="text-sm text-gray-500 mb-4">Record this barcode now and match it to a product later from My Bunker.</p>
+            <SaveForLaterForm
+              upc={unknownUpc}
+              onSaved={() => navigate('/bunker/unresolved')}
+              onSubmitNew={() => setStep('submit-new')}
+            />
+          </div>
         </div>
       )}
 

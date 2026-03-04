@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import Fuse from 'fuse.js';
-import { useBunkerList, useUpdateBottle, useUpdateBunkerItem, useRemoveBunkerItem } from '../hooks/useBunker';
+import { useBunkerList, useUpdateBottle, useUpdateBunkerItem, useRemoveBunkerItem, useUnresolvedCount } from '../hooks/useBunker';
 import { useLocations } from '../hooks/useLocations';
 import { useSpiritTypes } from '../hooks/useProducts';
 import { useUIStore } from '../stores/uiStore';
@@ -90,6 +91,7 @@ export default function BunkerListPage() {
   const { data: items = [], isLoading } = useBunkerList(filters);
   const { data: locations = [] } = useLocations();
   const { data: spiritTypes = [] } = useSpiritTypes();
+  const { data: unresolvedData } = useUnresolvedCount();
   const updateMutation = useUpdateBottle();
   const updateItemMutation = useUpdateBunkerItem();
   const removeMutation = useRemoveBunkerItem();
@@ -162,6 +164,18 @@ export default function BunkerListPage() {
           />
         )}
       </div>
+
+      {/* Unresolved barcodes banner */}
+      {(unresolvedData?.count ?? 0) > 0 && (
+        <div className="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm mt-4">
+          <span className="text-amber-800">
+            ⚠ {unresolvedData!.count} unresolved barcode{unresolvedData!.count !== 1 ? 's' : ''} waiting to be matched
+          </span>
+          <Link to="/bunker/unresolved" className="font-medium text-amber-700 hover:text-amber-900 whitespace-nowrap ml-4">
+            Resolve now →
+          </Link>
+        </div>
+      )}
 
       {/* Scrollable content */}
       {items.length === 0 ? (

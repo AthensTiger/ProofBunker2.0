@@ -128,3 +128,13 @@ export interface AddToBunkerResponse {
   bunker_item_id: number;
   bottle: BunkerBottle;
 }
+
+export interface UnresolvedScan {
+  id: number;
+  upc: string;
+  storage_location_id: number | null;
+  location_name: string | null;
+  notes: string | null;
+  created_at: string;
+  photos: Array<{ id: number; cdn_url: string; display_order: number }>;
+}
