@@ -169,6 +169,7 @@ export default function BottlesTable({ bottles, locations, productId, productNam
         onClose={() => setEditBottle(null)}
         onDelete={editBottle ? () => { setDeleteBottle(editBottle); setEditBottle(null); } : undefined}
         productContext={productContext}
+        productName={productName}
       />
 
       <Dialog
