@@ -78,16 +78,10 @@ function BunkerCard({
       onClick={() => navigate(`/bunker/${item.id}`)}
     >
       <div className="flex items-start gap-3">
-        {/* Bottle image */}
-        {showImages && (
+        {/* Image — only shown when enabled and an image exists */}
+        {showImages && item.image_url && (
           <div className="flex-shrink-0">
-            {item.image_url ? (
-              <img src={item.image_url} alt="" className="w-12 h-12 rounded-lg object-cover" />
-            ) : (
-              <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center text-gray-300 text-xs">
-                —
-              </div>
-            )}
+            <img src={item.image_url} alt="" className="w-12 h-12 rounded-lg object-cover" />
           </div>
         )}
 
