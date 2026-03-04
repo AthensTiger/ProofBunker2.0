@@ -71,6 +71,10 @@ export default function MenuEditorPage() {
       setSubtitle(template.subtitle || '');
       setSettings({ ...settings, ...template.settings });
       setSelectedItems(new Set(template.items.map((i) => i.bunker_item_id)));
+      // Restore saved filter rules
+      if (template.settings.filter_statuses?.length) setFilterStatuses(new Set(template.settings.filter_statuses));
+      if (template.settings.filter_locations?.length) setFilterLocations(new Set(template.settings.filter_locations));
+      if (template.settings.filter_spirit_types?.length) setFilterSpiritTypes(new Set(template.settings.filter_spirit_types));
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [template]);
@@ -82,13 +86,21 @@ export default function MenuEditorPage() {
       display_order: idx,
     }));
 
+    // Persist filter rules into settings so the backend can apply them at preview time
+    const settingsWithFilters = {
+      ...settings,
+      filter_statuses: filterStatuses.size > 0 ? Array.from(filterStatuses) : undefined,
+      filter_locations: filterLocations.size > 0 ? Array.from(filterLocations) : undefined,
+      filter_spirit_types: filterSpiritTypes.size > 0 ? Array.from(filterSpiritTypes) : undefined,
+    };
+
     Promise.all([
       updateMutation.mutateAsync({
         id: templateId,
         name: name.trim(),
         title: title.trim() || undefined,
         subtitle: subtitle.trim() || undefined,
-        settings,
+        settings: settingsWithFilters,
       }),
       setItemsMutation.mutateAsync({ id: templateId, items }),
     ]).then(() => {

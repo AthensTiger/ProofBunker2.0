@@ -211,6 +211,45 @@ export async function getMenuPreview(req: Request, res: Response, next: NextFunc
     const settings = template.settings || {};
     const collapse = settings.collapse_identical_bottles !== false; // default true
 
+    // Persistent filter rules saved in settings
+    const filterStatuses: string[]  = settings.filter_statuses  || [];
+    const filterLocations: string[] = settings.filter_locations || [];
+    const filterTypes: string[]     = settings.filter_spirit_types || [];
+
+    // Helper to build parameterised filter clauses, appending to an existing params array
+    function buildFilterClauses(params: any[], baseIdx: number): { sql: string; nextIdx: number } {
+      const clauses: string[] = [];
+      let idx = baseIdx;
+
+      // Status filter — applied directly in the bb JOIN (handled separately), but we need it for the WHERE
+      if (filterStatuses.length > 0) {
+        clauses.push(`bb.status = ANY($${idx}::text[])`);
+        params.push(filterStatuses);
+        idx++;
+      } else {
+        clauses.push(`bb.status != 'empty'`);
+      }
+
+      // Location filter — join to user_storage_locations
+      if (filterLocations.length > 0) {
+        clauses.push(`EXISTS (
+          SELECT 1 FROM user_storage_locations _usl
+          WHERE _usl.id = bb.storage_location_id AND _usl.name = ANY($${idx}::text[])
+        )`);
+        params.push(filterLocations);
+        idx++;
+      }
+
+      // Spirit type filter — match subtype first, fall back to type
+      if (filterTypes.length > 0) {
+        clauses.push(`COALESCE(p.spirit_subtype, p.spirit_type) = ANY($${idx}::text[])`);
+        params.push(filterTypes);
+        idx++;
+      }
+
+      return { sql: clauses.join(' AND '), nextIdx: idx };
+    }
+
     // Get items — if none exist, use full bunker
     const hasItems = await pool.query(
       'SELECT COUNT(*)::int AS count FROM menu_template_items WHERE menu_template_id = $1',
@@ -236,6 +275,10 @@ export async function getMenuPreview(req: Request, res: Response, next: NextFunc
 
     let items;
     if (hasItems.rows[0].count > 0) {
+      // Items-based query: apply status + location filters (spirit type already chosen by item selection)
+      const params: any[] = [id];
+      const { sql: filterSql } = buildFilterClauses(params, 2);
+
       const itemsResult = await pool.query(
         `SELECT
                 mti.section_override,
@@ -250,20 +293,25 @@ export async function getMenuPreview(req: Request, res: Response, next: NextFunc
          FROM menu_template_items mti
          JOIN bunker_items bi ON bi.id = mti.bunker_item_id
          JOIN products p ON p.id = bi.product_id
-         JOIN bunker_bottles bb ON bb.bunker_item_id = bi.id AND bb.status != 'empty'
+         JOIN bunker_bottles bb ON bb.bunker_item_id = bi.id
          LEFT JOIN companies c ON c.id = p.company_id
          LEFT JOIN product_images pi ON pi.product_id = p.id AND pi.is_primary = true
          WHERE mti.menu_template_id = $1
+           AND ${filterSql}
          ${collapse ? `GROUP BY
            mti.section_override, bi.product_id, p.name, p.spirit_type, p.spirit_subtype,
            p.description, p.msrp_usd, c.name, bi.personal_rating, bi.notes, pi.cdn_url,
            ${FINGERPRINT_COLS}
            HAVING COUNT(*) > 0` : ''}
          ORDER BY mti.display_order ASC, p.name ASC`,
-        [id]
+        params
       );
       items = itemsResult.rows;
     } else {
+      // Full-bunker query: apply all three filter types
+      const allParams: any[] = [userId];
+      const { sql: allFilterSql } = buildFilterClauses(allParams, 2);
+
       const allResult = await pool.query(
         `SELECT
                 NULL::text AS section_override,
@@ -277,18 +325,19 @@ export async function getMenuPreview(req: Request, res: Response, next: NextFunc
                 MIN(bb.purchase_price) AS purchase_price
          FROM bunker_items bi
          JOIN products p ON p.id = bi.product_id
-         JOIN bunker_bottles bb ON bb.bunker_item_id = bi.id AND bb.status != 'empty'
+         JOIN bunker_bottles bb ON bb.bunker_item_id = bi.id
          LEFT JOIN companies c ON c.id = p.company_id
          LEFT JOIN product_images pi ON pi.product_id = p.id AND pi.is_primary = true
          WHERE bi.user_id = $1
            AND p.approval_status = 'approved'
+           AND ${allFilterSql}
          ${collapse ? `GROUP BY
            bi.product_id, p.name, p.spirit_type, p.spirit_subtype,
            p.description, p.msrp_usd, c.name, bi.personal_rating, bi.notes, pi.cdn_url,
            ${FINGERPRINT_COLS}
            HAVING COUNT(*) > 0` : ''}
          ORDER BY p.spirit_type ASC, p.name ASC`,
-        [userId]
+        allParams
       );
       items = allResult.rows;
     }

@@ -29,6 +29,10 @@ export interface MenuSettings {
   show_release_year?: boolean;
   collapse_identical_bottles?: boolean;
   sort_by?: string;
+  // Persistent filter rules applied at preview time
+  filter_statuses?: string[];     // e.g. ['sealed', 'opened']
+  filter_locations?: string[];    // location names
+  filter_spirit_types?: string[]; // spirit subtype / type labels
 }
 
 export interface MenuTemplateItem {
