@@ -69,6 +69,98 @@ export default function MenuPreviewPage() {
   const columns = settings.columns;
   const sectionNames = Object.keys(sections);
 
+  // Detect nested grouping mode (group_by_location uses "loc||type||subtype" composite keys)
+  const isNested = sectionNames.length > 0 && sectionNames[0].includes('||');
+  const displayGroups = isNested
+    ? sectionNames.map((key, i) => {
+        const [loc, type, subtype] = key.split('||');
+        const prev = i > 0 ? sectionNames[i - 1].split('||') : null;
+        return {
+          key, loc, type, subtype,
+          showLoc: !prev || prev[0] !== loc,
+          showType: !prev || prev[0] !== loc || prev[1] !== type,
+        };
+      })
+    : null;
+
+  // Shared item renderer used in both nested and flat layouts
+  const renderItem = (item: any, idx: number) => (
+    <div key={idx} className="menu-item break-inside-avoid">
+      {/* Name + Price Row */}
+      <div className="flex items-baseline gap-1">
+        <span className="font-semibold text-gray-900 text-[0.85rem] leading-tight">{item.name}{item.age_statement && ` (${item.age_statement})`}</span>
+        {item.quantity > 1 && (
+          <span className="text-xs text-gray-400">×{item.quantity}</span>
+        )}
+        <span className="flex-1 border-b border-dotted border-gray-300 mx-1 translate-y-[-3px]" />
+        {settings.show_price && (
+          item.purchase_price != null ? (
+            <span className="text-sm text-gray-700 font-medium whitespace-nowrap">${Number(item.purchase_price).toFixed(2)}</span>
+          ) : item.msrp_usd != null ? (
+            <span className="text-xs text-gray-400 whitespace-nowrap italic">MSRP ${Number(item.msrp_usd).toFixed(2)}</span>
+          ) : null
+        )}
+      </div>
+
+      {/* Details */}
+      <div className="mt-0.5 text-xs text-gray-500 leading-relaxed">
+        {/* Company + Rating */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {settings.show_company && item.company_name && (
+            <span className="italic">{item.company_name}</span>
+          )}
+          {settings.show_rating && item.personal_rating && (
+            <>
+              {settings.show_company && item.company_name && (
+                <span className="text-gray-300">|</span>
+              )}
+              <StarRating rating={item.personal_rating} />
+            </>
+          )}
+        </div>
+
+        {/* ABV */}
+        {settings.show_abv && item.abv != null && (
+          <p className="mt-0.5 text-gray-400">ABV: {parseFloat((Number(item.abv) * 100).toFixed(1))}%</p>
+        )}
+
+        {/* Proof */}
+        {settings.show_proof && item.proof != null && (
+          <p className="mt-0.5 text-gray-400">{item.proof} proof</p>
+        )}
+
+        {/* Batch / Barrel / Year Distilled / Release Year */}
+        {settings.show_batch_number && item.batch_number && (
+          <p className="mt-0.5 text-gray-400">Batch: {item.batch_number}</p>
+        )}
+        {settings.show_barrel_number && item.barrel_number && (
+          <p className="mt-0.5 text-gray-400">Barrel: {item.barrel_number}</p>
+        )}
+        {settings.show_year_distilled && item.year_distilled != null && (
+          <p className="mt-0.5 text-gray-400">Distilled: {item.year_distilled}</p>
+        )}
+        {settings.show_release_year && item.release_year != null && (
+          <p className="mt-0.5 text-gray-400">Released: {item.release_year}</p>
+        )}
+
+        {/* Mash Bill */}
+        {settings.show_mash_bill && item.mash_bill && (
+          <p className="mt-0.5 text-gray-400">{item.mash_bill}</p>
+        )}
+
+        {/* Description */}
+        {settings.show_description && item.description && (
+          <p className="mt-1 text-gray-400 italic">{item.description}</p>
+        )}
+
+        {/* Tasting Notes — only show personal bunker notes */}
+        {settings.show_tasting_notes && item.notes && (
+          <p className="mt-1 text-gray-400 italic">{item.notes}</p>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <div>
       {/* Toolbar — hidden when printing */}
@@ -137,96 +229,53 @@ export default function MenuPreviewPage() {
           <div className={`${
             columns === 1 ? 'max-w-2xl mx-auto' : columns === 2 ? 'columns-2 gap-10' : 'columns-3 gap-8'
           }`}>
-            {sectionNames.map((sectionName) => (
-              <div key={sectionName} className="mb-8">
-                {/* Section Header — avoid breaking away from first item */}
-                <div className="text-center mb-4 break-after-avoid">
-                  <h2 className="inline-block text-sm font-bold text-amber-800 uppercase tracking-[0.25em] border-b border-amber-700/30 pb-1 capitalize">
-                    {sectionName}
-                  </h2>
-                </div>
-
-                {/* Items */}
-                <div className="space-y-3">
-                  {sections[sectionName].map((item, idx) => (
-                    <div key={idx} className="menu-item break-inside-avoid">
-                      {/* Name + Price Row */}
-                      <div className="flex items-baseline gap-1">
-                        <span className="font-semibold text-gray-900 text-[0.85rem] leading-tight">{item.name}{item.age_statement && ` (${item.age_statement})`}</span>
-                        {item.quantity > 1 && (
-                          <span className="text-xs text-gray-400">×{item.quantity}</span>
-                        )}
-                        <span className="flex-1 border-b border-dotted border-gray-300 mx-1 translate-y-[-3px]" />
-                        {settings.show_price && (
-                          item.purchase_price != null ? (
-                            <span className="text-sm text-gray-700 font-medium whitespace-nowrap">${Number(item.purchase_price).toFixed(2)}</span>
-                          ) : item.msrp_usd != null ? (
-                            <span className="text-xs text-gray-400 whitespace-nowrap italic">MSRP ${Number(item.msrp_usd).toFixed(2)}</span>
-                          ) : null
-                        )}
-                      </div>
-
-                      {/* Details */}
-                      <div className="mt-0.5 text-xs text-gray-500 leading-relaxed">
-                        {/* Company + Rating */}
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          {settings.show_company && item.company_name && (
-                            <span className="italic">{item.company_name}</span>
-                          )}
-                          {settings.show_rating && item.personal_rating && (
-                            <>
-                              {settings.show_company && item.company_name && (
-                                <span className="text-gray-300">|</span>
-                              )}
-                              <StarRating rating={item.personal_rating} />
-                            </>
-                          )}
-                        </div>
-
-                        {/* ABV */}
-                        {settings.show_abv && item.abv != null && (
-                          <p className="mt-0.5 text-gray-400">ABV: {parseFloat((Number(item.abv) * 100).toFixed(1))}%</p>
-                        )}
-
-                        {/* Proof */}
-                        {settings.show_proof && item.proof != null && (
-                          <p className="mt-0.5 text-gray-400">{item.proof} proof</p>
-                        )}
-
-                        {/* Batch / Barrel / Year Distilled / Release Year */}
-                        {settings.show_batch_number && item.batch_number && (
-                          <p className="mt-0.5 text-gray-400">Batch: {item.batch_number}</p>
-                        )}
-                        {settings.show_barrel_number && item.barrel_number && (
-                          <p className="mt-0.5 text-gray-400">Barrel: {item.barrel_number}</p>
-                        )}
-                        {settings.show_year_distilled && item.year_distilled != null && (
-                          <p className="mt-0.5 text-gray-400">Distilled: {item.year_distilled}</p>
-                        )}
-                        {settings.show_release_year && item.release_year != null && (
-                          <p className="mt-0.5 text-gray-400">Released: {item.release_year}</p>
-                        )}
-
-                        {/* Mash Bill */}
-                        {settings.show_mash_bill && item.mash_bill && (
-                          <p className="mt-0.5 text-gray-400">{item.mash_bill}</p>
-                        )}
-
-                        {/* Description */}
-                        {settings.show_description && item.description && (
-                          <p className="mt-1 text-gray-400 italic">{item.description}</p>
-                        )}
-
-                        {/* Tasting Notes — only show personal bunker notes */}
-                        {settings.show_tasting_notes && item.notes && (
-                          <p className="mt-1 text-gray-400 italic">{item.notes}</p>
-                        )}
-                      </div>
+            {isNested && displayGroups ? (
+              displayGroups.map(({ key, loc, type, subtype, showLoc, showType }) => (
+                <div key={key} className="mb-5">
+                  {/* Location divider */}
+                  {showLoc && (
+                    <div className="flex items-center gap-3 mt-6 mb-4 break-after-avoid">
+                      <span className="flex-1 border-t border-gray-300" />
+                      <span className="text-xs font-bold text-gray-600 uppercase tracking-[0.3em] whitespace-nowrap">{loc}</span>
+                      <span className="flex-1 border-t border-gray-300" />
                     </div>
-                  ))}
+                  )}
+                  {/* Spirit type header */}
+                  {showType && (
+                    <div className="text-center mb-3 break-after-avoid">
+                      <h2 className="inline-block text-sm font-bold text-amber-800 uppercase tracking-[0.25em] border-b border-amber-700/30 pb-1">
+                        {type}
+                      </h2>
+                    </div>
+                  )}
+                  {/* Spirit subtype header — only when subtype differs from type */}
+                  {subtype !== type && (
+                    <div className="text-center mb-2 break-after-avoid">
+                      <h3 className="text-xs italic text-gray-500 tracking-wide capitalize">{subtype}</h3>
+                    </div>
+                  )}
+                  {/* Items */}
+                  <div className="space-y-3">
+                    {sections[key].map(renderItem)}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              sectionNames.map((sectionName) => (
+                <div key={sectionName} className="mb-8">
+                  {/* Section Header — avoid breaking away from first item */}
+                  <div className="text-center mb-4 break-after-avoid">
+                    <h2 className="inline-block text-sm font-bold text-amber-800 uppercase tracking-[0.25em] border-b border-amber-700/30 pb-1 capitalize">
+                      {sectionName}
+                    </h2>
+                  </div>
+                  {/* Items */}
+                  <div className="space-y-3">
+                    {sections[sectionName].map(renderItem)}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>

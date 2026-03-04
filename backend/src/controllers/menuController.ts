@@ -373,7 +373,7 @@ export async function getMenuPreview(req: Request, res: Response, next: NextFunc
     for (const item of items) {
       item.tasting_notes = tastingByProduct[item.product_id] || [];
       const section = groupByLoc
-        ? (item.location_name || 'No Location')
+        ? `${item.location_name || 'No Location'}||${item.spirit_type || 'Other'}||${item.spirit_subtype || item.spirit_type || 'Other'}`
         : (item.section_override || item.spirit_subtype || item.spirit_type || 'Other');
       if (!sections[section]) sections[section] = [];
       sections[section].push(item);
