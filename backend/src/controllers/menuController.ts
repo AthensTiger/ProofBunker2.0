@@ -210,6 +210,9 @@ export async function getMenuPreview(req: Request, res: Response, next: NextFunc
 
     const settings = template.settings || {};
     const collapse = settings.collapse_identical_bottles !== false; // default true
+    const groupByLoc = settings.group_by_location === true;
+    // When grouping by location, include location name in the collapse fingerprint
+    const locGroupCol = groupByLoc ? `COALESCE(usl.name, 'No Location'),` : '';
 
     // Persistent filter rules saved in settings
     const filterStatuses: string[]  = settings.filter_statuses  || [];
@@ -287,6 +290,7 @@ export async function getMenuPreview(req: Request, res: Response, next: NextFunc
                 c.name AS company_name,
                 bi.personal_rating, bi.notes,
                 pi.cdn_url AS image_url,
+                COALESCE(usl.name, 'No Location') AS location_name,
                 ${DETAIL_COLS},
                 ${collapse ? 'COUNT(*)::int AS quantity' : '1::int AS quantity'},
                 MIN(bb.purchase_price) AS purchase_price
@@ -296,14 +300,16 @@ export async function getMenuPreview(req: Request, res: Response, next: NextFunc
          JOIN bunker_bottles bb ON bb.bunker_item_id = bi.id
          LEFT JOIN companies c ON c.id = p.company_id
          LEFT JOIN product_images pi ON pi.product_id = p.id AND pi.is_primary = true
+         LEFT JOIN user_storage_locations usl ON usl.id = bb.storage_location_id
          WHERE mti.menu_template_id = $1
            AND ${filterSql}
          ${collapse ? `GROUP BY
            mti.section_override, bi.product_id, p.name, p.spirit_type, p.spirit_subtype,
            p.description, p.msrp_usd, c.name, bi.personal_rating, bi.notes, pi.cdn_url,
+           ${locGroupCol}
            ${FINGERPRINT_COLS}
            HAVING COUNT(*) > 0` : ''}
-         ORDER BY mti.display_order ASC, p.name ASC`,
+         ORDER BY mti.display_order ASC, p.spirit_type ASC, p.spirit_subtype ASC, p.name ASC`,
         params
       );
       items = itemsResult.rows;
@@ -320,6 +326,7 @@ export async function getMenuPreview(req: Request, res: Response, next: NextFunc
                 c.name AS company_name,
                 bi.personal_rating, bi.notes,
                 pi.cdn_url AS image_url,
+                COALESCE(usl.name, 'No Location') AS location_name,
                 ${DETAIL_COLS},
                 ${collapse ? 'COUNT(*)::int AS quantity' : '1::int AS quantity'},
                 MIN(bb.purchase_price) AS purchase_price
@@ -328,15 +335,17 @@ export async function getMenuPreview(req: Request, res: Response, next: NextFunc
          JOIN bunker_bottles bb ON bb.bunker_item_id = bi.id
          LEFT JOIN companies c ON c.id = p.company_id
          LEFT JOIN product_images pi ON pi.product_id = p.id AND pi.is_primary = true
+         LEFT JOIN user_storage_locations usl ON usl.id = bb.storage_location_id
          WHERE bi.user_id = $1
            AND p.approval_status = 'approved'
            AND ${allFilterSql}
          ${collapse ? `GROUP BY
            bi.product_id, p.name, p.spirit_type, p.spirit_subtype,
            p.description, p.msrp_usd, c.name, bi.personal_rating, bi.notes, pi.cdn_url,
+           ${locGroupCol}
            ${FINGERPRINT_COLS}
            HAVING COUNT(*) > 0` : ''}
-         ORDER BY p.spirit_type ASC, p.name ASC`,
+         ORDER BY p.spirit_type ASC, p.spirit_subtype ASC, p.name ASC`,
         allParams
       );
       items = allResult.rows;
@@ -358,18 +367,26 @@ export async function getMenuPreview(req: Request, res: Response, next: NextFunc
       }
     }
 
-    // Attach tasting notes and group by section (spirit_subtype preferred)
+    // Attach tasting notes and group by section
     const sections: Record<string, any[]> = {};
     for (const item of items) {
       item.tasting_notes = tastingByProduct[item.product_id] || [];
-      const section = item.section_override || item.spirit_subtype || item.spirit_type || 'Other';
+      const section = groupByLoc
+        ? (item.location_name || 'No Location')
+        : (item.section_override || item.spirit_subtype || item.spirit_type || 'Other');
       if (!sections[section]) sections[section] = [];
       sections[section].push(item);
     }
 
-    // Sort items alphabetically within each section
+    // Sort items within each section: spirit_type → spirit_subtype → name
     for (const key of Object.keys(sections)) {
-      sections[key].sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
+      sections[key].sort((a: any, b: any) => {
+        const typeDiff = (a.spirit_type || '').localeCompare(b.spirit_type || '');
+        if (typeDiff !== 0) return typeDiff;
+        const subtypeDiff = (a.spirit_subtype || '').localeCompare(b.spirit_subtype || '');
+        if (subtypeDiff !== 0) return subtypeDiff;
+        return (a.name || '').localeCompare(b.name || '');
+      });
     }
 
     // Return sections in alphabetical order

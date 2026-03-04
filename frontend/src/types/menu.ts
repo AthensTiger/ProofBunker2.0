@@ -28,6 +28,7 @@ export interface MenuSettings {
   show_year_distilled?: boolean;
   show_release_year?: boolean;
   collapse_identical_bottles?: boolean;
+  group_by_location?: boolean;
   sort_by?: string;
   // Persistent filter rules applied at preview time
   filter_statuses?: string[];     // e.g. ['sealed', 'opened']
