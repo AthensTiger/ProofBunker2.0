@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { Virtuoso } from 'react-virtuoso';
 import type { BunkerListItem } from '../../types/bunker';
 import StarRatingInput from '../ui/StarRatingInput';
 import Badge from '../ui/Badge';
@@ -37,109 +38,158 @@ function rowKey(item: BunkerListItem): string {
   ].join('|');
 }
 
+function BunkerCard({
+  item,
+  showImages,
+  onStatusAction,
+  onDelete,
+  onRatingChange,
+  navigate,
+}: {
+  item: BunkerListItem;
+  showImages: boolean;
+  onStatusAction: (bottleId: number, newStatus: 'opened' | 'empty') => void;
+  onDelete: (item: BunkerListItem) => void;
+  onRatingChange: (itemId: number, rating: number | null) => void;
+  navigate: ReturnType<typeof useNavigate>;
+}) {
+  const detailSummary = buildDetailSummary(item);
+
+  return (
+    <div
+      className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-3 mx-4 cursor-pointer active:bg-gray-50 transition-colors"
+      onClick={() => navigate(`/bunker/${item.id}`)}
+    >
+      <div className="flex items-start gap-3">
+        {/* Bottle image */}
+        {showImages && (
+          <div className="flex-shrink-0">
+            {item.image_url ? (
+              <img src={item.image_url} alt="" className="w-12 h-12 rounded-lg object-cover" />
+            ) : (
+              <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center text-gray-300 text-xs">
+                —
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Main content */}
+        <div className="flex-1 min-w-0">
+          {/* Name row */}
+          <div className="flex items-start justify-between gap-2 mb-1">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="font-semibold text-gray-900 text-sm leading-tight">{item.name}</span>
+                {item.bottle_count > 1 && (
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                    ×{item.bottle_count}
+                  </span>
+                )}
+                {item.approval_status === 'pending' && <Badge variant="pending">Pending</Badge>}
+                {item.approval_status === 'rejected' && <Badge variant="rejected">Rejected</Badge>}
+              </div>
+              {detailSummary && (
+                <p className="text-xs text-gray-400 mt-0.5 leading-snug">{detailSummary}</p>
+              )}
+            </div>
+
+            {/* Action button */}
+            <div onClick={(e) => e.stopPropagation()} className="flex-shrink-0">
+              {(item.location_names.length > 1 || item.statuses.length > 1) ? (
+                <button
+                  onClick={() => navigate(`/bunker/${item.id}`)}
+                  className="text-xs font-medium text-amber-700 hover:text-amber-900 whitespace-nowrap"
+                >
+                  Multiple
+                </button>
+              ) : item.primary_status === 'sealed' && item.primary_bottle_id ? (
+                <button
+                  onClick={() => onStatusAction(item.primary_bottle_id!, 'opened')}
+                  className="text-xs font-medium text-amber-700 hover:text-amber-900"
+                >
+                  Open
+                </button>
+              ) : item.primary_status === 'opened' && item.primary_bottle_id ? (
+                <button
+                  onClick={() => onStatusAction(item.primary_bottle_id!, 'empty')}
+                  className="text-xs font-medium text-amber-700 hover:text-amber-900"
+                >
+                  Empty
+                </button>
+              ) : item.primary_status === 'empty' ? (
+                <button
+                  onClick={() => onDelete(item)}
+                  className="text-xs font-medium text-red-500 hover:text-red-700"
+                >
+                  Delete
+                </button>
+              ) : null}
+            </div>
+          </div>
+
+          {/* Meta row */}
+          <div className="flex items-center gap-2 flex-wrap text-xs text-gray-500 mb-2">
+            {item.company_name && <span>{item.company_name}</span>}
+            {item.spirit_subtype ? (
+              <span className="capitalize">
+                {item.spirit_subtype}{' '}
+                <span className="text-gray-400">({item.spirit_type})</span>
+              </span>
+            ) : item.spirit_type ? (
+              <span className="capitalize">{item.spirit_type}</span>
+            ) : null}
+            {item.abv != null && (
+              <span>{parseFloat((Number(item.abv) * 100).toFixed(1))}%</span>
+            )}
+            {item.location_names.length > 0 && (
+              <span className="text-gray-400">{item.location_names.join(', ')}</span>
+            )}
+            {item.statuses.length > 0 && (
+              <span className={`capitalize font-medium ${
+                item.primary_status === 'sealed'
+                  ? 'text-green-600'
+                  : item.primary_status === 'opened'
+                  ? 'text-blue-600'
+                  : 'text-gray-400'
+              }`}>
+                {item.statuses.join(', ')}
+              </span>
+            )}
+          </div>
+
+          {/* Rating row */}
+          <div onClick={(e) => e.stopPropagation()}>
+            <StarRatingInput
+              rating={item.personal_rating}
+              onChange={(r) => onRatingChange(item.id, r)}
+              size="sm"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function BunkerTable({ items, showImages, onStatusAction, onDelete, onRatingChange }: BunkerTableProps) {
   const navigate = useNavigate();
 
   return (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
-          <tr>
-            {showImages && <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase w-16">Img</th>}
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">Company</th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden lg:table-cell">Type</th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden sm:table-cell">ABV</th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rating</th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Qty</th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden lg:table-cell">Locations</th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">Status</th>
-            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase w-28">Change Status</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-200">
-          {items.map((item) => {
-            const detailSummary = buildDetailSummary(item);
-            return (
-            <tr
-              key={rowKey(item)}
-              className="hover:bg-gray-50 cursor-pointer transition-colors"
-              onClick={() => navigate(`/bunker/${item.id}`)}
-            >
-              {showImages && (
-                <td className="px-4 py-3">
-                  {item.image_url ? (
-                    <img src={item.image_url} alt="" className="w-10 h-10 rounded object-cover" />
-                  ) : (
-                    <div className="w-10 h-10 rounded bg-gray-100 flex items-center justify-center text-gray-400 text-xs">
-                      No img
-                    </div>
-                  )}
-                </td>
-              )}
-              <td className="px-4 py-3">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-medium text-gray-900 text-sm">{item.name}</span>
-                  {item.approval_status === 'pending' && <Badge variant="pending">Pending</Badge>}
-                  {item.approval_status === 'rejected' && <Badge variant="rejected">Rejected</Badge>}
-                </div>
-                {detailSummary && (
-                  <p className="text-xs text-gray-400 mt-0.5">{detailSummary}</p>
-                )}
-              </td>
-              <td className="px-4 py-3 text-sm text-gray-600 hidden md:table-cell">{item.company_name || '--'}</td>
-              <td className="px-4 py-3 text-sm text-gray-600 hidden lg:table-cell capitalize">
-                {item.spirit_subtype
-                  ? <>{item.spirit_subtype} <span className="text-gray-400 text-xs normal-case">({item.spirit_type})</span></>
-                  : item.spirit_type}
-              </td>
-              <td className="px-4 py-3 text-sm text-gray-600 hidden sm:table-cell">{item.abv != null ? `${parseFloat((Number(item.abv) * 100).toFixed(1))}%` : '--'}</td>
-              <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                <StarRatingInput rating={item.personal_rating} onChange={(r) => onRatingChange(item.id, r)} size="sm" />
-              </td>
-              <td className="px-4 py-3 text-sm text-gray-900 font-medium">{item.bottle_count}</td>
-              <td className="px-4 py-3 text-sm text-gray-600 hidden lg:table-cell">
-                {item.location_names.length > 0 ? item.location_names.join(', ') : '--'}
-              </td>
-              <td className="px-4 py-3 text-sm text-gray-600 hidden md:table-cell capitalize">
-                {item.statuses.length > 0 ? item.statuses.join(', ') : '--'}
-              </td>
-              <td className="px-4 py-3 text-right">
-                {(item.location_names.length > 1 || item.statuses.length > 1) ? (
-                  <button
-                    onClick={(e) => { e.stopPropagation(); navigate(`/bunker/${item.id}`); }}
-                    className="text-sm font-medium text-amber-700 hover:text-amber-900"
-                  >
-                    Multiple
-                  </button>
-                ) : item.primary_status === 'sealed' && item.primary_bottle_id ? (
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onStatusAction(item.primary_bottle_id!, 'opened'); }}
-                    className="text-sm font-medium text-amber-700 hover:text-amber-900"
-                  >
-                    Open
-                  </button>
-                ) : item.primary_status === 'opened' && item.primary_bottle_id ? (
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onStatusAction(item.primary_bottle_id!, 'empty'); }}
-                    className="text-sm font-medium text-amber-700 hover:text-amber-900"
-                  >
-                    Empty
-                  </button>
-                ) : item.primary_status === 'empty' ? (
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onDelete(item); }}
-                    className="text-sm font-medium text-red-500 hover:text-red-700"
-                  >
-                    Delete
-                  </button>
-                ) : null}
-              </td>
-            </tr>
-          );
-          })}
-        </tbody>
-      </table>
-    </div>
+    <Virtuoso
+      useWindowScroll
+      data={items}
+      computeItemKey={(_, item) => rowKey(item)}
+      itemContent={(_, item) => (
+        <BunkerCard
+          item={item}
+          showImages={showImages}
+          onStatusAction={onStatusAction}
+          onDelete={onDelete}
+          onRatingChange={onRatingChange}
+          navigate={navigate}
+        />
+      )}
+    />
   );
 }
