@@ -22,7 +22,7 @@ export default function StarRatingInput({ rating, onChange, size = 'md' }: StarR
             star <= display ? 'text-amber-400' : 'text-gray-300'
           } hover:scale-110`}
           onMouseEnter={() => setHovered(star)}
-          onClick={() => onChange(star === rating ? null : star)}
+          onClick={() => { const newRating = star === rating ? null : star; setHovered(null); onChange(newRating); }}
           title={star === rating ? 'Clear rating' : `${star} star${star > 1 ? 's' : ''}`}
         >
           &#9733;
