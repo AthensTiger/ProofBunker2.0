@@ -131,21 +131,6 @@ export default function Navbar() {
             </NavLink>
           ))}
           <NavLink
-            to="/whats-new"
-            className={mobileLinkClass}
-            onClick={() => setMobileOpen(false)}
-          >
-            <span className="inline-flex items-center gap-2">
-              <img src="/whats-new.png" alt="" className="w-5 h-5 object-contain" />
-              What's New
-              {unreadCount > 0 && (
-                <span className="inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-red-500 rounded-full leading-none">
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </span>
-              )}
-            </span>
-          </NavLink>
-          <NavLink
             to="/settings"
             className={mobileLinkClass}
             onClick={() => setMobileOpen(false)}
