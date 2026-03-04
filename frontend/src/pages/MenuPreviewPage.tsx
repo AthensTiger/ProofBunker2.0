@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useMenuPreview } from '../hooks/useMenus';
 import StarRating from '../components/ui/StarRating';
 import { exportElementToPdf } from '../utils/exportPdf';
+import { useUIStore } from '../stores/uiStore';
 
 export default function MenuPreviewPage() {
   const { id } = useParams<{ id: string }>();
@@ -10,6 +11,7 @@ export default function MenuPreviewPage() {
   const { data, isLoading } = useMenuPreview(id!);
   const menuRef = useRef<HTMLDivElement>(null);
   const [exporting, setExporting] = useState(false);
+  const addToast = useUIStore((s) => s.addToast);
 
   async function handleExportPdf() {
     if (!menuRef.current || exporting) return;
@@ -17,6 +19,10 @@ export default function MenuPreviewPage() {
     try {
       const filename = (data?.template.name ?? 'menu').replace(/\s+/g, '-').toLowerCase() + '.pdf';
       await exportElementToPdf(menuRef.current, filename);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'PDF export failed.';
+      addToast('error', msg);
+      console.error('[exportPdf]', err);
     } finally {
       setExporting(false);
     }
