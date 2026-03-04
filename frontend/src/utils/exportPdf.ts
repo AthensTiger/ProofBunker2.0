@@ -1,19 +1,28 @@
-import html2canvas from 'html2canvas';
+import { toCanvas } from 'html-to-image';
 import jsPDF from 'jspdf';
 
 /**
  * Captures an HTML element and exports it as a multi-page A4 PDF.
- * Uses scale: 2 for 2× resolution (looks sharp on retina / print).
- * On iOS Safari, opens the PDF in a new tab (download attr not supported).
+ * Uses html-to-image (SVG foreignObject) which supports all modern CSS
+ * including oklab/oklch colors used by Tailwind CSS v3+.
  */
 export async function exportElementToPdf(element: HTMLElement, filename: string): Promise<void> {
-  const canvas = await html2canvas(element, {
-    scale: 2,
-    useCORS: true,
-    allowTaint: true,       // render cross-origin images even if canvas is tainted
+  const canvas = await toCanvas(element, {
+    pixelRatio: 2,
     backgroundColor: '#ffffff',
-    logging: false,
-    imageTimeout: 15000,
+    // Skip cross-origin images that would taint the canvas
+    filter: (node) => {
+      if (node instanceof HTMLImageElement) {
+        try {
+          // Allow same-origin and data: images; skip cross-origin
+          const url = new URL(node.src, window.location.href);
+          return url.origin === window.location.origin || node.src.startsWith('data:');
+        } catch {
+          return false;
+        }
+      }
+      return true;
+    },
   });
 
   if (canvas.width === 0 || canvas.height === 0) {
@@ -27,18 +36,7 @@ export async function exportElementToPdf(element: HTMLElement, filename: string)
   const imgHeightMm = (canvas.height * A4_WIDTH_MM) / canvas.width;
 
   const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-
-  // Use PNG for lossless when allowTaint is on (toDataURL may throw for tainted canvas with jpeg)
-  let imgData: string;
-  try {
-    imgData = canvas.toDataURL('image/jpeg', 0.92);
-  } catch {
-    // Canvas tainted by cross-origin image — fall back to PNG (also tainted, will throw)
-    // In that case we skip images via a second pass
-    throw new Error(
-      'A cross-origin image (e.g. logo) prevented PDF export. Try disabling the logo watermark.'
-    );
-  }
+  const imgData = canvas.toDataURL('image/jpeg', 0.92);
 
   let remainingHeight = imgHeightMm;
   let yOffset = 0;
