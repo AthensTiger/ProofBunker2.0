@@ -1,29 +1,25 @@
 import { toCanvas } from 'html-to-image';
 import jsPDF from 'jspdf';
 
-// US Letter paper at 96 DPI screen resolution
-const PAPER_WIDTH_PX = 816;   // 8.5 inches × 96 dpi
-const LETTER_W_MM   = 215.9;  // 8.5 inches in mm
-const LETTER_H_MM   = 279.4;  // 11 inches in mm
+const PAPER_WIDTH_PX = 816;   // 8.5 inches × 96 dpi (US Letter)
+const LETTER_W_MM   = 215.9;  // 8.5 in → mm
+const LETTER_H_MM   = 279.4;  // 11 in → mm
 
 /**
- * Renders `element` into an off-screen 816 px-wide container (= letter paper
- * at 96 dpi), then exports as a properly-sized downloadable PDF.
- * Uses html-to-image (SVG foreignObject) so modern CSS (oklab, etc.) works.
+ * Renders `element` at a fixed 816 px (letter-paper) width in an off-screen
+ * container, waits for reflow, then exports as a properly-sized PDF.
  */
 export async function exportElementToPdf(element: HTMLElement, filename: string): Promise<void> {
-  // 1. Build an off-screen wrapper fixed at letter-paper width
+  // 1. Off-screen wrapper — absolute (not fixed) so scrollHeight works correctly
   const wrapper = document.createElement('div');
   Object.assign(wrapper.style, {
-    position: 'fixed',
-    top: '0',
-    left: '-9999px',
+    position: 'absolute',
+    top: '-9999px',
+    left: '0',
     width: `${PAPER_WIDTH_PX}px`,
     background: 'white',
-    zIndex: '-9999',
   });
 
-  // 2. Clone the menu element and strip screen-only visual treatments
   const clone = element.cloneNode(true) as HTMLElement;
   Object.assign(clone.style, {
     width: '100%',
@@ -36,9 +32,19 @@ export async function exportElementToPdf(element: HTMLElement, filename: string)
   document.body.appendChild(wrapper);
 
   try {
-    // 3. Capture at 2× pixel ratio for crisp text (≈ 192 effective DPI)
+    // 2. Wait for the browser to reflow the cloned element at 816 px
+    await new Promise<void>((resolve) => setTimeout(resolve, 150));
+
+    const contentHeight = wrapper.scrollHeight;
+    if (contentHeight === 0) {
+      throw new Error('Menu content could not be measured (height is 0).');
+    }
+
+    // 3. Capture with explicit dimensions so html-to-image never guesses size
     const canvas = await toCanvas(wrapper, {
       pixelRatio: 2,
+      width: PAPER_WIDTH_PX,
+      height: contentHeight,
       backgroundColor: '#ffffff',
       // Skip cross-origin images (e.g. R2 logo watermark) to avoid canvas taint
       filter: (node) => {
@@ -58,7 +64,7 @@ export async function exportElementToPdf(element: HTMLElement, filename: string)
       throw new Error('Menu content could not be captured (canvas is empty).');
     }
 
-    // 4. Build multi-page letter PDF
+    // 4. Multi-page letter PDF
     const imgHeightMm = (canvas.height * LETTER_W_MM) / canvas.width;
     const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
     const imgData = canvas.toDataURL('image/jpeg', 0.92);
@@ -74,7 +80,7 @@ export async function exportElementToPdf(element: HTMLElement, filename: string)
       }
     }
 
-    // 5. Save — iOS Safari must open in new tab (no <a download> support)
+    // 5. iOS Safari: open blob URL in new tab (no <a download> support)
     const isIOS =
       /iPad|iPhone|iPod/.test(navigator.userAgent) ||
       (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
