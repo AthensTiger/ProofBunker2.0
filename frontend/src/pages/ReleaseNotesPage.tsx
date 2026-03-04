@@ -1,76 +1,52 @@
-import { useEffect } from 'react';
-import { useReleaseNotes, useMarkReleaseNotesRead } from '../hooks/useReleaseNotes';
-import type { ReleaseNote } from '../types/releaseNotes';
-
-const TYPE_CONFIG: Record<ReleaseNote['type'], { label: string; className: string }> = {
-  new_feature: { label: 'New Feature', className: 'bg-amber-100 text-amber-800' },
-  enhancement: { label: 'Enhancement', className: 'bg-blue-100 text-blue-800' },
-  bug_fix:     { label: 'Bug Fix',     className: 'bg-green-100 text-green-700' },
-  other:       { label: 'Other',       className: 'bg-gray-100 text-gray-600' },
-};
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
-}
+import { useEffect, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import { useMarkReleaseNotesRead } from '../hooks/useReleaseNotes';
 
 export default function ReleaseNotesPage() {
-  const { data, isLoading } = useReleaseNotes();
+  const [markdown, setMarkdown] = useState<string | null>(null);
+  const [error, setError] = useState(false);
   const markRead = useMarkReleaseNotesRead();
 
-  // Mark all as read when user visits this page
   useEffect(() => {
     markRead.mutate();
+    fetch('/release-notes-latest.md')
+      .then((r) => {
+        if (!r.ok) throw new Error('Not found');
+        return r.text();
+      })
+      .then(setMarkdown)
+      .catch(() => setError(true));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <div className="max-w-3xl mx-auto">
-      <div className="mb-8">
+      <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">What's New</h1>
         <p className="text-sm text-gray-500 mt-1">The latest improvements and fixes to Proof Bunker.</p>
       </div>
 
-      {isLoading ? (
+      {error ? (
+        <div className="text-center py-20 text-gray-400">Release notes not available.</div>
+      ) : markdown === null ? (
         <div className="flex justify-center py-20">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-700" />
         </div>
-      ) : !data || data.notes.length === 0 ? (
-        <div className="text-center py-20 text-gray-400">No release notes yet.</div>
       ) : (
-        <div className="relative">
-          {/* Timeline line */}
-          <div className="absolute left-0 top-2 bottom-2 w-px bg-amber-200 ml-[7px]" />
-
-          <div className="space-y-8">
-            {data.notes.map((note) => {
-              const typeInfo = TYPE_CONFIG[note.type] || TYPE_CONFIG.other;
-              return (
-                <div key={note.id} className="flex gap-5">
-                  {/* Timeline dot */}
-                  <div className="flex-shrink-0 mt-1.5">
-                    <div className="w-[15px] h-[15px] rounded-full bg-amber-600 border-2 border-white ring-2 ring-amber-200" />
-                  </div>
-
-                  {/* Card */}
-                  <div className="flex-1 bg-white rounded-lg shadow px-5 py-4">
-                    <div className="flex flex-wrap items-center gap-2 mb-2">
-                      <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${typeInfo.className}`}>
-                        {typeInfo.label}
-                      </span>
-                      {note.version && (
-                        <span className="px-2 py-0.5 text-xs font-mono font-medium rounded-full bg-gray-100 text-gray-500">
-                          v{note.version}
-                        </span>
-                      )}
-                      <span className="text-xs text-gray-400 ml-auto">{formatDate(note.created_at)}</span>
-                    </div>
-                    <h2 className="font-semibold text-gray-900 mb-1">{note.title}</h2>
-                    <p className="text-sm text-gray-600 whitespace-pre-line leading-relaxed">{note.body}</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+        <div className="bg-white rounded-lg shadow px-8 py-7 prose prose-sm max-w-none
+          prose-headings:text-gray-900 prose-headings:font-bold
+          prose-h1:text-2xl prose-h1:border-b prose-h1:border-gray-200 prose-h1:pb-3 prose-h1:mb-5
+          prose-h2:text-lg prose-h2:mt-8 prose-h2:mb-3 prose-h2:text-amber-800
+          prose-h3:text-base prose-h3:mt-5 prose-h3:mb-2
+          prose-p:text-gray-700 prose-p:leading-relaxed
+          prose-li:text-gray-700 prose-li:leading-relaxed
+          prose-strong:text-gray-900
+          prose-table:text-sm prose-table:border-collapse
+          prose-th:bg-gray-50 prose-th:px-3 prose-th:py-2 prose-th:text-left prose-th:font-semibold prose-th:border prose-th:border-gray-200
+          prose-td:px-3 prose-td:py-2 prose-td:border prose-td:border-gray-200
+          prose-hr:border-gray-200 prose-hr:my-6
+          prose-code:text-amber-700 prose-code:bg-amber-50 prose-code:px-1 prose-code:rounded">
+          <ReactMarkdown>{markdown}</ReactMarkdown>
         </div>
       )}
     </div>
