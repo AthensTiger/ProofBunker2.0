@@ -230,7 +230,7 @@ export default function BottleDetailsForm({
             </button>
 
             {showDetails && (
-              <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3">
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Batch #</label>
                   <input type="text" value={overrides.batch_number} onChange={(e) => setField('batch_number', e.target.value)} placeholder="e.g., Batch 7" className={inputClass} />

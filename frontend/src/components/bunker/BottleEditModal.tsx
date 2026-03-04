@@ -223,7 +223,7 @@ export default function BottleEditModal({ bottle, locations, onClose, onDelete, 
           {/* Bottle-specific detail fields — always visible in edit modal */}
           <div className="border-t border-gray-100 pt-4">
             <p className="text-sm font-medium text-gray-700 mb-3">Bottle Details</p>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">Batch #</label>
                 <input type="text" value={batchNumber} onChange={(e) => setBatchNumber(e.target.value)} placeholder="e.g., Batch 7" className={inputClass} />

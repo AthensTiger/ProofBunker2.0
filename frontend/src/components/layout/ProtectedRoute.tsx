@@ -27,7 +27,7 @@ export default function ProtectedRoute() {
   return (
     <div className="min-h-screen bg-gray-50 print:min-h-0 print:bg-white">
       <Navbar />
-      <main className="max-w-7xl mx-auto px-4 py-6 print:p-0 print:m-0 print:max-w-none">
+      <main className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6 print:p-0 print:m-0 print:max-w-none">
         <Outlet />
       </main>
       <ToastContainer />
