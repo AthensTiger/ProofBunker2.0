@@ -1,12 +1,21 @@
+import { useEffect, useState } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { Navigate } from 'react-router-dom';
 import LoadingScreen from '../components/layout/LoadingScreen';
 
 export default function LoginPage() {
   const { loginWithRedirect, isAuthenticated, isLoading, error } = useAuth0();
+  const [loadingTimedOut, setLoadingTimedOut] = useState(false);
 
-  // If still loading after 10 s, stop waiting and show the login button
-  if (isLoading && !error) return <LoadingScreen />;
+  // If Auth0 silent-auth hangs (e.g. Chrome iOS blocks the refresh iframe),
+  // stop waiting after 4 s and show the sign-in button.
+  useEffect(() => {
+    if (!isLoading) return;
+    const t = setTimeout(() => setLoadingTimedOut(true), 4000);
+    return () => clearTimeout(t);
+  }, [isLoading]);
+
+  if (isLoading && !error && !loadingTimedOut) return <LoadingScreen />;
   if (isAuthenticated) return <Navigate to="/bunker" replace />;
 
   return (
