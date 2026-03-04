@@ -238,7 +238,7 @@ export default function SubmitNewProductForm({ initialUpc, locations, onSubmit, 
               renderItem={(p) => (
                 <div className="flex items-center gap-2">
                   {p.image_url ? (
-                    <img src={p.image_url} alt="" className="w-8 h-8 rounded object-cover flex-shrink-0" />
+                    <img src={p.image_url} alt="" className="w-8 h-8 rounded object-cover object-right flex-shrink-0" />
                   ) : (
                     <div className="w-8 h-8 rounded bg-gray-100 flex-shrink-0" />
                   )}

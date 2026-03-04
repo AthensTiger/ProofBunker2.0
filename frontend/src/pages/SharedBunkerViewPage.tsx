@@ -64,7 +64,7 @@ export default function SharedBunkerViewPage() {
                   {vis.show_photos && (
                     <td className="px-4 py-3">
                       {item.image_url ? (
-                        <img src={item.image_url} alt="" className="w-10 h-10 rounded object-cover" />
+                        <img src={item.image_url} alt="" className="w-10 h-10 rounded object-cover object-right" />
                       ) : (
                         <div className="w-10 h-10 rounded bg-gray-100 flex items-center justify-center text-gray-400 text-xs">
                           No img

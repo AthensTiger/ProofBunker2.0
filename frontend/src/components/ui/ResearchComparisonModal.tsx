@@ -194,7 +194,7 @@ export default function ResearchComparisonModal({ result, currentValues, onApply
                       <img
                         src={url}
                         alt={`Suggestion ${i + 1}`}
-                        className="w-20 h-20 object-cover"
+                        className="w-20 h-20 object-cover object-right"
                         onError={(e) => (e.currentTarget.parentElement!.style.display = 'none')}
                       />
                       {isImgSelected && (

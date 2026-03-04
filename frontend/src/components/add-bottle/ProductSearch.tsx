@@ -49,7 +49,7 @@ export default function ProductSearch({ onSelect }: ProductSearchProps) {
               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-amber-50 transition-colors text-left"
             >
               {product.image_url ? (
-                <img src={product.image_url} alt="" className="w-10 h-10 rounded object-cover flex-shrink-0" />
+                <img src={product.image_url} alt="" className="w-10 h-10 rounded object-cover object-right flex-shrink-0" />
               ) : (
                 <div className="w-10 h-10 rounded bg-gray-100 flex items-center justify-center text-gray-400 text-xs flex-shrink-0">
                   No img

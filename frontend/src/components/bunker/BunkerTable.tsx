@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Virtuoso } from 'react-virtuoso';
 import type { BunkerListItem, BunkerCardFields } from '../../types/bunker';
@@ -57,6 +58,11 @@ function BunkerCard({
   navigate: ReturnType<typeof useNavigate>;
 }) {
   const detailSummary = buildDetailSummary(item);
+  const [localRating, setLocalRating] = useState<number | null>(item.personal_rating);
+
+  useEffect(() => {
+    setLocalRating(item.personal_rating);
+  }, [item.personal_rating]);
 
   // Build meta chips based on visible fields
   const metaParts: string[] = [];
@@ -81,7 +87,7 @@ function BunkerCard({
         {/* Image — only shown when enabled and an image exists */}
         {showImages && item.image_url && (
           <div className="flex-shrink-0">
-            <img src={item.image_url} alt="" className="w-12 h-12 rounded-lg object-cover" />
+            <img src={item.image_url} alt="" className="w-12 h-12 rounded-lg object-cover object-right" />
           </div>
         )}
 
@@ -178,8 +184,8 @@ function BunkerCard({
           {cardFields.show_rating && (
             <div onClick={(e) => e.stopPropagation()}>
               <StarRatingInput
-                rating={item.personal_rating}
-                onChange={(r) => onRatingChange(item.id, r)}
+                rating={localRating}
+                onChange={(r) => { setLocalRating(r); onRatingChange(item.id, r); }}
                 size="sm"
               />
             </div>

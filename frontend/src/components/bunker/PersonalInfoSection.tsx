@@ -12,19 +12,28 @@ interface PersonalInfoSectionProps {
 export default function PersonalInfoSection({ itemId, rating, notes }: PersonalInfoSectionProps) {
   const addToast = useUIStore((s) => s.addToast);
   const updateMutation = useUpdateBunkerItem();
+  const [localRating, setLocalRating] = useState<number | null>(rating);
   const [localNotes, setLocalNotes] = useState(notes || '');
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  useEffect(() => {
+    setLocalRating(rating);
+  }, [rating]);
 
   useEffect(() => {
     setLocalNotes(notes || '');
   }, [notes]);
 
   const handleRatingChange = (newRating: number | null) => {
+    setLocalRating(newRating);
     updateMutation.mutate(
       { id: itemId, personal_rating: newRating },
       {
         onSuccess: () => addToast('success', 'Rating saved'),
-        onError: () => addToast('error', 'Failed to save rating'),
+        onError: () => {
+          setLocalRating(rating); // revert on error
+          addToast('error', 'Failed to save rating');
+        },
       }
     );
   };
@@ -46,7 +55,7 @@ export default function PersonalInfoSection({ itemId, rating, notes }: PersonalI
 
       <div className="mb-4">
         <label className="block text-sm font-medium text-gray-700 mb-1">Rating</label>
-        <StarRatingInput rating={rating} onChange={handleRatingChange} size="lg" />
+        <StarRatingInput rating={localRating} onChange={handleRatingChange} size="lg" />
       </div>
 
       <div>

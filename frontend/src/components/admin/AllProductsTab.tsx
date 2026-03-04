@@ -71,7 +71,7 @@ export default function AllProductsTab() {
           {products.map((p: any) => (
             <div key={p.id} className="bg-white rounded-lg shadow px-4 py-3 flex items-center gap-4">
               {p.image_url ? (
-                <img src={p.image_url} alt="" className="w-10 h-10 rounded object-cover flex-shrink-0" />
+                <img src={p.image_url} alt="" className="w-10 h-10 rounded object-cover object-right flex-shrink-0" />
               ) : (
                 <div className="w-10 h-10 rounded bg-gray-100 flex-shrink-0" />
               )}

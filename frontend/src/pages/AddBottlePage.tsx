@@ -166,7 +166,7 @@ export default function AddBottlePage() {
         <div className="space-y-4">
           <div className="flex items-center gap-3 bg-amber-50 rounded-lg p-4">
             {selectedProduct.image_url ? (
-              <img src={selectedProduct.image_url} alt="" className="w-12 h-12 rounded object-cover" />
+              <img src={selectedProduct.image_url} alt="" className="w-12 h-12 rounded object-cover object-right" />
             ) : (
               <div className="w-12 h-12 rounded bg-gray-200 flex items-center justify-center text-gray-400 text-xs">
                 No img

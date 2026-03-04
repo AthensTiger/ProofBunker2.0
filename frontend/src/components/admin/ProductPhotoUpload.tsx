@@ -69,7 +69,7 @@ export default function ProductPhotoUpload({ productId, images }: ProductPhotoUp
               <img
                 src={img.cdn_url || ''}
                 alt=""
-                className={`w-full h-full object-cover rounded-lg ${img.is_primary ? 'ring-2 ring-amber-500' : ''}`}
+                className={`w-full h-full object-cover object-right rounded-lg ${img.is_primary ? 'ring-2 ring-amber-500' : ''}`}
               />
               <button
                 onClick={() => handleDelete(img.id)}

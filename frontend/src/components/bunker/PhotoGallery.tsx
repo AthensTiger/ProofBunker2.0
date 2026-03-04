@@ -32,7 +32,7 @@ export default function PhotoGallery({ photos }: PhotoGalleryProps) {
             <img
               src={photo.cdn_url}
               alt=""
-              className="w-16 h-16 object-cover rounded cursor-pointer hover:opacity-90 transition-opacity"
+              className="w-16 h-16 object-cover object-right rounded cursor-pointer hover:opacity-90 transition-opacity"
               onClick={() => setLightboxIndex(idx)}
             />
             <button

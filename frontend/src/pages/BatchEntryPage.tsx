@@ -153,7 +153,7 @@ export default function BatchEntryPage() {
               <div key={entry.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
                 <div className="flex items-center gap-3">
                   {entry.product.image_url ? (
-                    <img src={entry.product.image_url} alt="" className="w-8 h-8 rounded object-cover" />
+                    <img src={entry.product.image_url} alt="" className="w-8 h-8 rounded object-cover object-right" />
                   ) : (
                     <div className="w-8 h-8 rounded bg-gray-100" />
                   )}
