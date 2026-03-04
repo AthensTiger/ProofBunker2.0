@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useCurrentUser } from '../hooks/useUser';
 import {
   usePendingProducts,
   useApproveProduct,
@@ -39,12 +40,14 @@ const TABS: [Tab, string][] = [
 
 export default function AdminPage() {
   const [tab, setTab] = useState<Tab>('pending-products');
+  const { data: profile } = useCurrentUser();
+  const pageTitle = profile?.role === 'curator' ? 'Curator Dashboard' : 'Admin Dashboard';
 
   return (
     <div>
       {/* Sticky header — title + tabs stay visible while content scrolls */}
       <div className="sticky top-16 z-10 bg-gray-50 pt-4 sm:pt-6 pb-0 border-b border-gray-200">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">Admin Dashboard</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-4">{pageTitle}</h1>
         <div className="overflow-x-auto">
           <nav className="flex gap-4 min-w-max">
             {TABS.map(([key, label]) => (

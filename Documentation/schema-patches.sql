@@ -178,6 +178,11 @@ ALTER TABLE bunker_items ADD COLUMN IF NOT EXISTS age_statement  VARCHAR(100);
 ALTER TABLE bunker_items ADD COLUMN IF NOT EXISTS mash_bill      VARCHAR(500);
 
 -- ================================================================
+-- Fuzzy search: trigram similarity for product autocomplete
+-- ================================================================
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+-- ================================================================
 -- Bunker Bottle — Per-Bottle Detail Fields (Option A)
 -- Details moved from bunker_items to bunker_bottles so each
 -- physical bottle carries its own independent values.

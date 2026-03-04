@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import Fuse from 'fuse.js';
 import { useBunkerList, useUpdateBottle, useUpdateBunkerItem, useRemoveBunkerItem } from '../hooks/useBunker';
 import { useLocations } from '../hooks/useLocations';
 import { useSpiritTypes } from '../hooks/useProducts';
@@ -118,16 +119,21 @@ export default function BunkerListPage() {
     });
   };
 
+  const fuse = useMemo(
+    () =>
+      new Fuse(items, {
+        keys: ['name', 'company_name', 'spirit_type'],
+        threshold: 0.35,
+        minMatchCharLength: 2,
+        ignoreLocation: true,
+      }),
+    [items]
+  );
+
   const filteredItems = useMemo(() => {
     if (!searchText.trim()) return items;
-    const q = searchText.toLowerCase();
-    return items.filter(
-      (item) =>
-        item.name.toLowerCase().includes(q) ||
-        (item.company_name && item.company_name.toLowerCase().includes(q)) ||
-        item.spirit_type.toLowerCase().includes(q)
-    );
-  }, [items, searchText]);
+    return fuse.search(searchText).map((r) => r.item);
+  }, [fuse, items, searchText]);
 
   if (isLoading) {
     return (

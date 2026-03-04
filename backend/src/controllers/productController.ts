@@ -169,12 +169,18 @@ export async function autocomplete(req: Request, res: Response, next: NextFuncti
        LEFT JOIN companies c ON c.id = p.company_id
        LEFT JOIN product_images pi ON pi.product_id = p.id AND pi.is_primary = true
        WHERE p.approval_status = 'approved'
-         AND p.name ILIKE $1
+         AND (
+           p.name ILIKE $1
+           OR c.name ILIKE $1
+           OR p.name % $2
+           OR c.name % $2
+         )
        ORDER BY
-         CASE WHEN p.name ILIKE $2 THEN 0 ELSE 1 END,
+         CASE WHEN p.name ILIKE $3 THEN 0 ELSE 1 END,
+         GREATEST(similarity(p.name, $2), similarity(COALESCE(c.name, ''), $2)) DESC,
          p.name ASC
-       LIMIT $3`,
-      [`%${q}%`, `${q}%`, limit]
+       LIMIT $4`,
+      [`%${q}%`, q, `${q}%`, limit]
     );
 
     res.json(result.rows);
