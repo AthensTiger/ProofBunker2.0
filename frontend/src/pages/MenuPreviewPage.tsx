@@ -251,7 +251,7 @@ export default function MenuPreviewPage() {
                   {/* Spirit subtype header — only when subtype differs from type */}
                   {subtype !== type && (
                     <div className="text-center mb-2 break-after-avoid">
-                      <h3 className="text-xs italic text-gray-500 tracking-wide capitalize">{subtype}</h3>
+                      <h3 className="text-xs italic text-amber-800 tracking-wide capitalize">{subtype}</h3>
                     </div>
                   )}
                   {/* Items */}
