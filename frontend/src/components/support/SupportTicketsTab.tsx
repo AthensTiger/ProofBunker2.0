@@ -120,7 +120,20 @@ export default function SupportTicketsTab() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const canEdit = currentUser?.role === 'admin';
 
-  const filtered = statusFilter === 'all' ? tickets : tickets.filter((t) => t.status === statusFilter);
+const STATUS_ORDER: Record<string, number> = {
+  in_progress: 0,
+  open: 1,
+  resolved: 2,
+  closed: 3,
+};
+
+  const filtered = (statusFilter === 'all' ? tickets : tickets.filter((t) => t.status === statusFilter))
+    .slice()
+    .sort((a, b) => {
+      const statusDiff = (STATUS_ORDER[a.status] ?? 99) - (STATUS_ORDER[b.status] ?? 99);
+      if (statusDiff !== 0) return statusDiff;
+      return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+    });
 
   if (isLoading) {
     return (
