@@ -11,7 +11,7 @@ export default function FloatingChat() {
       {/* Floating button */}
       <button
         onClick={() => setOpen((v) => !v)}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-amber-700 hover:bg-amber-800 text-white rounded-full shadow-lg flex items-center justify-center transition-colors"
+        className="fixed bottom-6 left-6 z-50 w-12 h-12 bg-gray-700 hover:bg-gray-800 text-white rounded-full shadow-lg flex items-center justify-center transition-colors"
         title="Support Chat"
         aria-label="Open support chat"
       >
@@ -28,7 +28,7 @@ export default function FloatingChat() {
 
       {/* Chat panel */}
       {open && (
-        <div className="fixed bottom-24 right-6 z-50 w-80 sm:w-96 h-[480px] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden">
+        <div className="fixed bottom-20 left-6 z-50 w-80 sm:w-96 h-[480px] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden">
           {/* Panel header */}
           <div className="flex items-center justify-between px-4 py-3 bg-amber-700 text-white">
             <div className="flex items-center gap-2">

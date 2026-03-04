@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAddToBunker } from '../hooks/useBunker';
+import { useAddToBunker, useCreateUnresolvedScan, useDeleteUnresolvedScan } from '../hooks/useBunker';
 import { useLocations } from '../hooks/useLocations';
 import { useUIStore } from '../stores/uiStore';
 import { useUpcLookup } from '../hooks/useProducts';
@@ -13,41 +13,61 @@ interface BatchEntry {
   upc: string;
 }
 
+interface UnknownEntry {
+  id: string;
+  upc: string;
+  scanId: number;
+}
+
 export default function BatchEntryPage() {
   const navigate = useNavigate();
   const addToast = useUIStore((s) => s.addToast);
   const { data: locations = [] } = useLocations();
   const addMutation = useAddToBunker();
+  const createUnresolvedMutation = useCreateUnresolvedScan();
+  const deleteUnresolvedMutation = useDeleteUnresolvedScan();
 
   const [upcInput, setUpcInput] = useState('');
   const [searchUpc, setSearchUpc] = useState('');
   const [entries, setEntries] = useState<BatchEntry[]>([]);
+  const [unknownEntries, setUnknownEntries] = useState<UnknownEntry[]>([]);
   const [locationId, setLocationId] = useState<number | undefined>();
   const [saving, setSaving] = useState(false);
   const [scanning, setScanning] = useState(false);
 
   const { data: lookupResult, error: lookupError, isFetching } = useUpcLookup(searchUpc);
 
-  // Handle lookup result
-  if (lookupResult && searchUpc) {
-    const entry: BatchEntry = {
-      id: Date.now().toString(),
-      product: lookupResult,
-      upc: searchUpc,
-    };
-    setEntries((prev) => [entry, ...prev]);
+  // Handle successful UPC lookup
+  useEffect(() => {
+    if (!lookupResult || !searchUpc) return;
+    setEntries((prev) => [{ id: Date.now().toString(), product: lookupResult, upc: searchUpc }, ...prev]);
     setSearchUpc('');
     setUpcInput('');
     addToast('success', `Found: ${lookupResult.name}`);
-  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lookupResult, searchUpc]);
 
-  if (lookupError && searchUpc) {
-    addToast('error', `No product found for UPC: ${searchUpc}`);
+  // Handle unknown UPC — save as unresolved scan immediately
+  useEffect(() => {
+    if (!lookupError || !searchUpc) return;
+    const upc = searchUpc;
+    const locId = locationId;
     setSearchUpc('');
     setUpcInput('');
-  }
+    createUnresolvedMutation.mutate(
+      { upc, storage_location_id: locId ?? null },
+      {
+        onSuccess: (scan) => {
+          setUnknownEntries((prev) => [{ id: Date.now().toString(), upc, scanId: scan.id }, ...prev]);
+          addToast('info', `Unknown barcode saved — match it to a product later`);
+        },
+        onError: () => addToast('error', `Could not save unknown barcode: ${upc}`),
+      }
+    );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lookupError, searchUpc, locationId]);
 
-  const handleScan = (e: React.FormEvent) => {
+  const handleScan = (e: { preventDefault(): void }) => {
     e.preventDefault();
     const cleaned = upcInput.trim();
     if (cleaned.length < 8) return;
@@ -58,8 +78,13 @@ export default function BatchEntryPage() {
     setEntries((prev) => prev.filter((e) => e.id !== id));
   };
 
+  const handleRemoveUnknown = (entry: UnknownEntry) => {
+    deleteUnresolvedMutation.mutate(entry.scanId);
+    setUnknownEntries((prev) => prev.filter((e) => e.id !== entry.id));
+  };
+
   const handleDone = async () => {
-    if (entries.length === 0) {
+    if (entries.length === 0 && unknownEntries.length === 0) {
       navigate('/bunker');
       return;
     }
@@ -80,10 +105,18 @@ export default function BatchEntryPage() {
       }
     }
 
-    addToast('success', `Added ${successCount} of ${entries.length} bottles to bunker`);
+    if (successCount > 0) {
+      addToast('success', `Added ${successCount} of ${entries.length} bottles to bunker`);
+    }
+    if (unknownEntries.length > 0) {
+      addToast('info', `${unknownEntries.length} unknown barcode${unknownEntries.length !== 1 ? 's' : ''} saved — resolve them from My Bunker`);
+    }
+
     setSaving(false);
     navigate('/bunker');
   };
+
+  const totalItems = entries.length + unknownEntries.length;
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -143,8 +176,9 @@ export default function BatchEntryPage() {
         </form>
       </div>
 
+      {/* Resolved entries */}
       {entries.length > 0 && (
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <div className="bg-white rounded-lg shadow p-6 mb-4">
           <h2 className="text-sm font-semibold text-gray-700 uppercase mb-3">
             Scanned ({entries.length})
           </h2>
@@ -174,13 +208,48 @@ export default function BatchEntryPage() {
         </div>
       )}
 
+      {/* Unknown barcodes — already saved to the unresolved queue */}
+      {unknownEntries.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg shadow p-6 mb-4">
+          <h2 className="text-sm font-semibold text-amber-800 uppercase mb-1">
+            Unknown Barcodes ({unknownEntries.length})
+          </h2>
+          <p className="text-xs text-amber-700 mb-3">Saved — match each one to a product from My Bunker.</p>
+          <div className="space-y-2">
+            {unknownEntries.map((entry) => (
+              <div key={entry.id} className="flex items-center justify-between py-2 border-b border-amber-100 last:border-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded bg-amber-100 flex items-center justify-center">
+                    <svg className="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <p className="font-mono text-sm font-medium text-gray-900">{entry.upc}</p>
+                </div>
+                <button
+                  onClick={() => handleRemoveUnknown(entry)}
+                  disabled={deleteUnresolvedMutation.isPending}
+                  className="text-sm text-red-500 hover:text-red-700 disabled:opacity-50"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="flex justify-end">
         <button
           onClick={handleDone}
           disabled={saving}
           className="px-6 py-3 bg-amber-700 text-white rounded-lg font-medium hover:bg-amber-800 transition-colors disabled:opacity-50"
         >
-          {saving ? 'Saving...' : entries.length > 0 ? `Done (Add ${entries.length} bottles)` : 'Done'}
+          {saving
+            ? 'Saving...'
+            : totalItems > 0
+              ? `Done (${entries.length} bottle${entries.length !== 1 ? 's' : ''}${unknownEntries.length > 0 ? `, ${unknownEntries.length} unknown` : ''})`
+              : 'Done'}
         </button>
       </div>
 

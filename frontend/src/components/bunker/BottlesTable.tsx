@@ -72,10 +72,16 @@ export default function BottlesTable({ bottles, locations, productId, productNam
 
   const handleDeleteBottle = () => {
     if (!deleteBottle) return;
+    const isLastBottle = bottles.length === 1;
     deleteMutation.mutate(deleteBottle.id, {
       onSuccess: () => {
-        addToast('success', 'Bottle deleted');
         setDeleteBottle(null);
+        if (isLastBottle) {
+          addToast('success', 'Item removed from bunker');
+          navigate('/bunker');
+        } else {
+          addToast('success', 'Bottle deleted');
+        }
       },
       onError: () => addToast('error', 'Failed to delete bottle'),
     });
