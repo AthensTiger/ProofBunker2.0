@@ -1,11 +1,26 @@
+import { useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useMenuPreview } from '../hooks/useMenus';
 import StarRating from '../components/ui/StarRating';
+import { exportElementToPdf } from '../utils/exportPdf';
 
 export default function MenuPreviewPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data, isLoading } = useMenuPreview(id!);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [exporting, setExporting] = useState(false);
+
+  async function handleExportPdf() {
+    if (!menuRef.current || exporting) return;
+    setExporting(true);
+    try {
+      const filename = (data?.template.name ?? 'menu').replace(/\s+/g, '-').toLowerCase() + '.pdf';
+      await exportElementToPdf(menuRef.current, filename);
+    } finally {
+      setExporting(false);
+    }
+  }
 
   if (isLoading) {
     return (
@@ -55,16 +70,40 @@ export default function MenuPreviewPage() {
         <button onClick={() => navigate(`/menus/${id}/edit`)} className="text-sm text-gray-600 hover:text-gray-900 font-medium">
           &larr; Back to Editor
         </button>
-        <button
-          onClick={() => window.print()}
-          className="px-4 py-2 text-sm font-medium bg-amber-700 text-white rounded-lg hover:bg-amber-800 transition-colors"
-        >
-          Print
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleExportPdf}
+            disabled={exporting}
+            className="px-4 py-2 text-sm font-medium border border-amber-700 text-amber-700 rounded-lg hover:bg-amber-50 transition-colors disabled:opacity-60 flex items-center gap-1.5"
+          >
+            {exporting ? (
+              <>
+                <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                </svg>
+                Generating…
+              </>
+            ) : (
+              <>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Export PDF
+              </>
+            )}
+          </button>
+          <button
+            onClick={() => window.print()}
+            className="px-4 py-2 text-sm font-medium bg-amber-700 text-white rounded-lg hover:bg-amber-800 transition-colors"
+          >
+            Print
+          </button>
+        </div>
       </div>
 
       {/* Menu Page */}
-      <div className="menu-page relative bg-white rounded-lg shadow print:shadow-none print:rounded-none">
+      <div ref={menuRef} className="menu-page relative bg-white rounded-lg shadow print:shadow-none print:rounded-none">
         {/* Logo Watermark */}
         {settings.show_logo && template.print_logo_url && (
           <div className="print-watermark-container" aria-hidden="true">
