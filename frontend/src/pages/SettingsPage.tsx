@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
-import { useCurrentUser, useUpdateProfile, useUploadUserLogo } from '../hooks/useUser';
-import { useLocations, useCreateLocation, useUpdateLocation, useDeleteLocation, useUploadLocationLogo } from '../hooks/useLocations';
+import { useCurrentUser, useUpdateProfile, useUploadUserLogo, useDeleteUserLogo } from '../hooks/useUser';
+import { useLocations, useCreateLocation, useUpdateLocation, useDeleteLocation, useUploadLocationLogo, useDeleteLocationLogo } from '../hooks/useLocations';
 import { useMyShares, useCreateShare, useDeleteShare } from '../hooks/useShares';
 import { useUIStore } from '../stores/uiStore';
 import ExportDialog from '../components/export/ExportDialog';
@@ -15,7 +15,9 @@ export default function SettingsPage() {
   const { data: shares = [] } = useMyShares();
   const updateProfile = useUpdateProfile();
   const uploadUserLogo = useUploadUserLogo();
+  const deleteUserLogo = useDeleteUserLogo();
   const uploadLocationLogo = useUploadLocationLogo();
+  const deleteLocationLogo = useDeleteLocationLogo();
   const createLocation = useCreateLocation();
   const updateLocation = useUpdateLocation();
   const deleteLocation = useDeleteLocation();
@@ -178,13 +180,27 @@ export default function SettingsPage() {
               <span className="text-2xl text-gray-300">🖼</span>
             </div>
           )}
-          <button
-            onClick={() => userLogoInputRef.current?.click()}
-            disabled={uploadUserLogo.isPending}
-            className="px-4 py-2 text-sm font-medium border border-amber-700 text-amber-700 rounded-lg hover:bg-amber-50 transition-colors disabled:opacity-50"
-          >
-            {uploadUserLogo.isPending ? 'Uploading…' : user?.logo_url ? 'Replace Logo' : 'Upload Logo'}
-          </button>
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={() => userLogoInputRef.current?.click()}
+              disabled={uploadUserLogo.isPending || deleteUserLogo.isPending}
+              className="px-4 py-2 text-sm font-medium border border-amber-700 text-amber-700 rounded-lg hover:bg-amber-50 transition-colors disabled:opacity-50"
+            >
+              {uploadUserLogo.isPending ? 'Uploading…' : user?.logo_url ? 'Replace Logo' : 'Upload Logo'}
+            </button>
+            {user?.logo_url && (
+              <button
+                onClick={() => deleteUserLogo.mutate(undefined, {
+                  onSuccess: () => addToast('success', 'Logo removed'),
+                  onError: () => addToast('error', 'Failed to remove logo'),
+                })}
+                disabled={deleteUserLogo.isPending || uploadUserLogo.isPending}
+                className="px-4 py-2 text-sm font-medium text-red-500 hover:text-red-700 disabled:opacity-50"
+              >
+                {deleteUserLogo.isPending ? 'Removing…' : 'Remove Logo'}
+              </button>
+            )}
+          </div>
         </div>
       </section>
 
@@ -218,6 +234,19 @@ export default function SettingsPage() {
                   <span className="flex items-center justify-center w-full h-full text-gray-300 text-xs">📷</span>
                 )}
               </button>
+              {loc.logo_url && (
+                <button
+                  title="Remove location logo"
+                  onClick={() => deleteLocationLogo.mutate(loc.id, {
+                    onSuccess: () => addToast('success', 'Logo removed'),
+                    onError: () => addToast('error', 'Failed to remove logo'),
+                  })}
+                  disabled={deleteLocationLogo.isPending}
+                  className="flex-shrink-0 text-xs text-red-400 hover:text-red-600 disabled:opacity-50"
+                >
+                  ✕
+                </button>
+              )}
               {editingLocation?.id === loc.id ? (
                 <form onSubmit={handleSaveLocationName} className="flex items-center gap-2 flex-1">
                   <input

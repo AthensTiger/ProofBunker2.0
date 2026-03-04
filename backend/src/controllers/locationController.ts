@@ -134,6 +134,24 @@ export async function deleteLocation(req: Request, res: Response, next: NextFunc
   }
 }
 
+export async function deleteLocationLogo(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const userId = req.user!.id;
+    const { id } = req.params;
+    const result = await pool.query(
+      `UPDATE user_storage_locations SET logo_url = NULL WHERE id = $1 AND user_id = $2 RETURNING id, name, display_order, logo_url`,
+      [id, userId]
+    );
+    if (result.rows.length === 0) {
+      res.status(404).json({ error: 'Location not found' });
+      return;
+    }
+    res.json(result.rows[0]);
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function uploadLocationLogo(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const userId = req.user!.id;

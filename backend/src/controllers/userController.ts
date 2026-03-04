@@ -89,6 +89,19 @@ export async function updatePreferences(req: Request, res: Response, next: NextF
   }
 }
 
+export async function deleteUserLogo(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const userId = req.user!.id;
+    const result = await pool.query(
+      `UPDATE users SET logo_url = NULL, updated_at = NOW() WHERE id = $1 RETURNING *`,
+      [userId]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function uploadUserLogo(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const userId = req.user!.id;

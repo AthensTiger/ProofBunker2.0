@@ -62,3 +62,14 @@ export function useUploadUserLogo() {
     },
   });
 }
+
+export function useDeleteUserLogo() {
+  const api = useApiClient();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.del('/users/me/logo'),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user', 'me'] });
+    },
+  });
+}

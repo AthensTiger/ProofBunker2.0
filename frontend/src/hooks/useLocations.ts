@@ -57,3 +57,12 @@ export function useUploadLocationLogo() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['locations'] }),
   });
 }
+
+export function useDeleteLocationLogo() {
+  const api = useApiClient();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => api.del(`/locations/${id}/logo`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['locations'] }),
+  });
+}
