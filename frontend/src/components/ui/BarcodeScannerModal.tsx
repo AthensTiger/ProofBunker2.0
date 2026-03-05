@@ -25,7 +25,14 @@ export default function BarcodeScannerModal({ onScan, onClose }: BarcodeScannerM
 
     reader
       .decodeFromConstraints(
-        { video: { facingMode: 'environment' } },
+        {
+          video: {
+            facingMode: 'environment',
+            // Hint: prefer the main camera lens over ultrawide at startup
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            advanced: [{ zoom: 2 } as any],
+          },
+        },
         videoRef.current,
         (result) => {
           if (result && !scannedRef.current) {
@@ -41,6 +48,27 @@ export default function BarcodeScannerModal({ onScan, onClose }: BarcodeScannerM
       )
       .then((controls) => {
         controlsRef.current = controls;
+        // After stream is live, apply zoom via applyConstraints.
+        // On Android this uses optical zoom (forces main lens, no switching delay).
+        // On iOS it applies digital zoom. Both help avoid the lens-switch lag.
+        const video = videoRef.current;
+        if (video?.srcObject instanceof MediaStream) {
+          const track = video.srcObject.getVideoTracks()[0];
+          if (track) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const cap: any = track.getCapabilities?.();
+            if (cap?.zoom && cap.zoom.max > cap.zoom.min) {
+              // Target ~2× or 15% into the zoom range, whichever is smaller
+              const target = Math.min(
+                cap.zoom.min + (cap.zoom.max - cap.zoom.min) * 0.15,
+                cap.zoom.min * 2,
+                cap.zoom.max
+              );
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              track.applyConstraints({ advanced: [{ zoom: target } as any] }).catch(() => {});
+            }
+          }
+        }
       })
       .catch((err) => {
         console.error('Camera error:', err);
