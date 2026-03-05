@@ -1,5 +1,47 @@
 # What's New — March 2026
 
+## March 5, 2026 Updates
+
+### Support Ticket Lifecycle
+The support system now has a full resolution workflow:
+
+- **Email on Resolve** — when an admin marks your ticket as Resolved, you receive an email from noreply@proofbunker.com with a link back to the Support page
+- **7-Day Auto-Close** — resolved tickets automatically close after 7 days if no action is taken; you'll receive an email when this happens
+- **Reopen a Ticket** — if your issue isn't actually resolved, expand the ticket and click "Still need help? Reopen this ticket →", add a note explaining what still needs attention, and the ticket returns to In Progress
+- **Admin Force-Close** — admins can close any ticket immediately from the status dropdown
+
+### Unknown Barcodes — Resolve Flow & Photo Lightbox
+Scanned barcodes that aren't in the product database are now much easier to handle:
+
+- **Photo lightbox** on the Unknown Barcodes page — tap any photo thumbnail to open a full-size view with navigation between photos
+- **Resolve inline** — search for a matching product directly on the Unknown Barcodes page and add the bottle to your bunker without leaving the page
+- **Photo capture in batch scan** — unknown barcodes discovered during batch entry now let you snap up to 2 photos right from the scan session
+
+### Print Bunker — Nested Grouping
+When grouping by location, items now nest further into **Spirit Type → Subtype** within each location section. Subtype header color matches the spirit type color for visual consistency.
+
+---
+
+## March 4, 2026 Updates
+
+### Improvements
+- **Proof display** — values like 95.00000000001 now display cleanly as 95, 109.3 as 109.3, etc. Applied everywhere proof is shown or edited
+- **Camera scanning** — zoom hint applied at startup, reducing the lens-switching delay that caused missed scans on multi-camera iPhones
+- **Star ratings** — clicking a star now updates instantly with no lingering hover highlight
+- **Product images** — right-aligned in the bunker list card so the label text stays on the left where it's easiest to read
+- **Chatbot** — repositioned so it no longer overlaps the bottom navigation on mobile
+
+### Bug Fixes
+
+| Area | Fix |
+|------|-----|
+| iOS Chrome | Fixed login loop caused by Auth0 loading timeout on Chrome for iPhone |
+| Print Bunker | Fixed "Menu not found" error on templates after recent grouping changes |
+| Unknown Barcodes | Fixed batch scan incorrectly routing unknown barcodes |
+| Navigation | Deleting a bottle now stays on the correct page instead of redirecting unexpectedly |
+
+---
+
 ## Overview
 
 This release represents a major expansion of Proof Bunker with 15+ new features across collection management, social tools, print capabilities, and UX polish. Here's everything that's new.
