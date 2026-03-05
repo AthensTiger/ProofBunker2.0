@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useCreateTicket, useMyTickets } from '../../hooks/useSupport';
+import { useCreateTicket, useMyTickets, useReopenTicket } from '../../hooks/useSupport';
+import { useUIStore } from '../../stores/uiStore';
 import type { SupportTicket } from '../../types/support';
 
 const TYPE_LABELS: Record<string, string> = {
@@ -16,8 +17,39 @@ const STATUS_STYLES: Record<string, string> = {
   closed: 'bg-gray-100 text-gray-600',
 };
 
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function autoCloseCountdown(autoCloseAt: string): string {
+  const diff = new Date(autoCloseAt).getTime() - Date.now();
+  if (diff <= 0) return 'closing soon';
+  const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+  return `Auto-closes in ${days} day${days !== 1 ? 's' : ''}`;
+}
+
 function TicketCard({ ticket }: { ticket: SupportTicket }) {
   const [expanded, setExpanded] = useState(false);
+  const [showReopen, setShowReopen] = useState(false);
+  const [reopenNote, setReopenNote] = useState('');
+  const reopenMutation = useReopenTicket();
+  const addToast = useUIStore((s) => s.addToast);
+
+  const handleReopen = () => {
+    if (!reopenNote.trim()) return;
+    reopenMutation.mutate(
+      { id: ticket.id, note: reopenNote.trim() },
+      {
+        onSuccess: () => {
+          addToast('success', 'Ticket reopened');
+          setShowReopen(false);
+          setReopenNote('');
+        },
+        onError: () => addToast('error', 'Failed to reopen ticket'),
+      }
+    );
+  };
+
   return (
     <div className="border border-gray-200 rounded-lg p-4">
       <div className="flex items-start justify-between gap-3">
@@ -30,7 +62,12 @@ function TicketCard({ ticket }: { ticket: SupportTicket }) {
             <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${STATUS_STYLES[ticket.status]}`}>
               {ticket.status.replace('_', ' ')}
             </span>
-            <span className="text-xs text-gray-400">{new Date(ticket.created_at).toLocaleDateString()}</span>
+            {ticket.status === 'resolved' && ticket.auto_close_at && (
+              <span className="inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-700">
+                {autoCloseCountdown(ticket.auto_close_at)}
+              </span>
+            )}
+            <span className="text-xs text-gray-400">{formatDate(ticket.created_at)}</span>
           </div>
         </div>
         <button
@@ -51,6 +88,49 @@ function TicketCard({ ticket }: { ticket: SupportTicket }) {
             <div>
               <p className="text-xs font-medium text-amber-700 mb-1">AI Analysis</p>
               <p className="text-sm text-gray-700">{ticket.claude_analysis}</p>
+            </div>
+          )}
+          {ticket.reopened_at && (
+            <p className="text-xs text-gray-400">Previously reopened: {formatDate(ticket.reopened_at)}</p>
+          )}
+
+          {/* Reopen action — only for resolved tickets */}
+          {ticket.status === 'resolved' && (
+            <div className="pt-1">
+              {!showReopen ? (
+                <button
+                  onClick={() => setShowReopen(true)}
+                  className="text-sm font-medium text-amber-700 hover:text-amber-800"
+                >
+                  Still need help? Reopen this ticket →
+                </button>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-gray-600">Why are you reopening this ticket?</p>
+                  <textarea
+                    value={reopenNote}
+                    onChange={(e) => setReopenNote(e.target.value)}
+                    rows={3}
+                    placeholder="Describe what still needs to be resolved..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none"
+                  />
+                  <div className="flex gap-2 justify-end">
+                    <button
+                      onClick={() => { setShowReopen(false); setReopenNote(''); }}
+                      className="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleReopen}
+                      disabled={!reopenNote.trim() || reopenMutation.isPending}
+                      className="px-3 py-1.5 text-sm font-medium text-white bg-amber-700 hover:bg-amber-800 rounded-lg disabled:opacity-50"
+                    >
+                      {reopenMutation.isPending ? 'Reopening…' : 'Reopen Ticket'}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

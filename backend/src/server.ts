@@ -21,6 +21,7 @@ import messagesRoutes from './routes/messages';
 import notificationsRoutes from './routes/notifications';
 import postsRoutes from './routes/posts';
 import releaseNotesRoutes from './routes/releaseNotes';
+import { startAutoCloseJob } from './jobs/autoCloseTickets';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -64,6 +65,9 @@ app.use('/api/v1/release-notes', releaseNotesRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);
+
+// Background jobs
+startAutoCloseJob();
 
 // Start server
 app.listen(PORT, () => {

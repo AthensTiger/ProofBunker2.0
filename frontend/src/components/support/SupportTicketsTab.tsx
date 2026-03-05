@@ -108,6 +108,27 @@ function TicketCard({ ticket, canEdit }: { ticket: SupportTicket; canEdit: boole
               <p className="text-sm text-gray-800 whitespace-pre-wrap">{ticket.claude_suggested_fix}</p>
             </div>
           )}
+
+          {/* Lifecycle timestamps */}
+          {(ticket.resolved_at || ticket.auto_close_at || ticket.reopened_at) && (
+            <div className="flex flex-wrap gap-x-4 gap-y-1 pt-1">
+              {ticket.resolved_at && (
+                <span className="text-xs text-gray-400">
+                  Resolved: {new Date(ticket.resolved_at).toLocaleDateString()}
+                </span>
+              )}
+              {ticket.auto_close_at && (
+                <span className="text-xs text-amber-600">
+                  Auto-closes: {new Date(ticket.auto_close_at).toLocaleDateString()}
+                </span>
+              )}
+              {ticket.reopened_at && (
+                <span className="text-xs text-gray-400">
+                  Reopened: {new Date(ticket.reopened_at).toLocaleDateString()}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>

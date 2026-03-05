@@ -221,3 +221,23 @@ CREATE TABLE IF NOT EXISTS unresolved_scan_photos (
   display_order INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- ================================================================
+-- Support Ticket Lifecycle — Email Notifications & Auto-Close
+-- resolved_at / auto_close_at drive the 7-day auto-close cron job.
+-- reopened_at records last user reopen time.
+-- support_ticket_notes stores reopen reasons.
+-- ================================================================
+ALTER TABLE support_tickets ADD COLUMN IF NOT EXISTS resolved_at   TIMESTAMPTZ;
+ALTER TABLE support_tickets ADD COLUMN IF NOT EXISTS auto_close_at TIMESTAMPTZ;
+ALTER TABLE support_tickets ADD COLUMN IF NOT EXISTS reopened_at   TIMESTAMPTZ;
+
+CREATE TABLE IF NOT EXISTS support_ticket_notes (
+  id         SERIAL PRIMARY KEY,
+  ticket_id  INTEGER NOT NULL REFERENCES support_tickets(id) ON DELETE CASCADE,
+  user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  note       TEXT NOT NULL,
+  note_type  VARCHAR(20) NOT NULL DEFAULT 'reopen' CHECK (note_type IN ('reopen', 'admin')),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_ticket_notes_ticket ON support_ticket_notes(ticket_id);

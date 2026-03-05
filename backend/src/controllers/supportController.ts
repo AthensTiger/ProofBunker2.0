@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import pool from '../config/database';
 import { ANTHROPIC_API_KEY, ANTHROPIC_API_URL } from '../config/research';
+import { sendTicketResolvedEmail, sendTicketAdminClosedEmail } from '../utils/email';
 
 // Rate limiter for chat (20 per minute per user)
 const chatRateLimitMap = new Map<number, number[]>();
@@ -273,14 +274,103 @@ export async function updateTicketStatus(req: Request, res: Response, next: Next
     }
 
     const result = await pool.query(
-      `UPDATE support_tickets SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *`,
+      `UPDATE support_tickets SET
+        status = $1,
+        updated_at = NOW(),
+        resolved_at   = CASE WHEN $1 = 'resolved' THEN NOW() ELSE resolved_at END,
+        auto_close_at = CASE WHEN $1 = 'resolved' THEN NOW() + INTERVAL '7 days'
+                             WHEN $1 = 'closed'   THEN NULL
+                             ELSE auto_close_at END
+       WHERE id = $2 RETURNING *`,
       [status, id]
     );
     if (result.rows.length === 0) {
       res.status(404).json({ error: 'Ticket not found' });
       return;
     }
+    const ticket = result.rows[0];
+
+    if (status === 'resolved') {
+      sendTicketResolvedEmail(ticket.user_email, ticket.title);
+    } else if (status === 'closed') {
+      sendTicketAdminClosedEmail(ticket.user_email, ticket.title);
+    }
+
+    res.json(ticket);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// POST /support/tickets/:id/reopen (user: reopen a resolved ticket)
+export async function reopenTicket(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const userId = req.user!.id;
+    const { id } = req.params;
+    const { note } = req.body;
+
+    if (!note?.trim()) {
+      res.status(400).json({ error: 'A reopen note is required' });
+      return;
+    }
+
+    // Verify ownership and check current status
+    const check = await pool.query(
+      `SELECT * FROM support_tickets WHERE id = $1 AND user_id = $2`,
+      [id, userId]
+    );
+    if (check.rows.length === 0) {
+      res.status(404).json({ error: 'Ticket not found' });
+      return;
+    }
+    if (check.rows[0].status !== 'resolved') {
+      res.status(400).json({ error: 'Only resolved tickets can be reopened' });
+      return;
+    }
+
+    const result = await pool.query(
+      `UPDATE support_tickets SET
+        status = 'in_progress',
+        resolved_at = NULL,
+        auto_close_at = NULL,
+        reopened_at = NOW(),
+        updated_at = NOW()
+       WHERE id = $1 RETURNING *`,
+      [id]
+    );
+
+    await pool.query(
+      `INSERT INTO support_ticket_notes (ticket_id, user_id, note, note_type)
+       VALUES ($1, $2, $3, 'reopen')`,
+      [id, userId, note.trim()]
+    );
+
     res.json(result.rows[0]);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// GET /support/tickets/:id/notes (user: get reopen notes for own ticket)
+export async function getTicketNotes(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const userId = req.user!.id;
+    const { id } = req.params;
+
+    const check = await pool.query(
+      `SELECT id FROM support_tickets WHERE id = $1 AND user_id = $2`,
+      [id, userId]
+    );
+    if (check.rows.length === 0) {
+      res.status(404).json({ error: 'Ticket not found' });
+      return;
+    }
+
+    const result = await pool.query(
+      `SELECT * FROM support_ticket_notes WHERE ticket_id = $1 ORDER BY created_at ASC`,
+      [id]
+    );
+    res.json(result.rows);
   } catch (err) {
     next(err);
   }

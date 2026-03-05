@@ -9,6 +9,8 @@ import {
   getMyTickets,
   getAdminTickets,
   updateTicketStatus,
+  reopenTicket,
+  getTicketNotes,
 } from '../controllers/supportController';
 import '../types';
 
@@ -24,6 +26,8 @@ router.delete('/chat/history', clearChatHistory);
 // Tickets (user)
 router.post('/tickets', createTicket);
 router.get('/tickets', getMyTickets);
+router.post('/tickets/:id/reopen', reopenTicket);
+router.get('/tickets/:id/notes', getTicketNotes);
 
 // Tickets (admin)
 router.get('/admin/tickets', requireRole('admin', 'curator'), getAdminTickets);

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiClient } from '../api/client';
-import type { ChatMessage, SupportTicket } from '../types/support';
+import type { ChatMessage, SupportTicket, TicketNote } from '../types/support';
 
 export function useChatHistory() {
   const api = useApiClient();
@@ -70,5 +70,26 @@ export function useUpdateTicketStatus() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['support', 'admin', 'tickets'] });
     },
+  });
+}
+
+export function useReopenTicket() {
+  const api = useApiClient();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, note }: { id: number; note: string }) =>
+      api.post<SupportTicket>(`/support/tickets/${id}/reopen`, { note }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['support', 'tickets'] });
+    },
+  });
+}
+
+export function useTicketNotes(ticketId: number | null) {
+  const api = useApiClient();
+  return useQuery({
+    queryKey: ['support', 'tickets', ticketId, 'notes'],
+    queryFn: () => api.get<TicketNote[]>(`/support/tickets/${ticketId}/notes`),
+    enabled: ticketId != null,
   });
 }
