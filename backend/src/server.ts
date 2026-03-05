@@ -21,6 +21,7 @@ import messagesRoutes from './routes/messages';
 import notificationsRoutes from './routes/notifications';
 import postsRoutes from './routes/posts';
 import releaseNotesRoutes from './routes/releaseNotes';
+import correctionsRoutes from './routes/corrections';
 import { startAutoCloseJob } from './jobs/autoCloseTickets';
 
 const app = express();
@@ -62,6 +63,7 @@ app.use('/api/v1/messages', messagesRoutes);
 app.use('/api/v1/notifications', notificationsRoutes);
 app.use('/api/v1/posts', postsRoutes);
 app.use('/api/v1/release-notes', releaseNotesRoutes);
+app.use('/api/v1/corrections', correctionsRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);

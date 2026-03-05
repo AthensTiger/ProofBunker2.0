@@ -291,3 +291,71 @@ CREATE TABLE IF NOT EXISTS support_ticket_question_attachments (
   created_at  TIMESTAMPTZ DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_ticket_q_attachments_question ON support_ticket_question_attachments(question_id);
+
+-- ================================================================
+-- Product Corrections — AI-Powered Data Cleanup Staging
+-- Proposed corrections from AI research, staged for admin review.
+-- Nothing touches the products table until an admin approves.
+--
+-- Each row = one product's proposed corrections.
+-- Fields prefixed proposed_ hold the AI-suggested value.
+-- current_ fields are snapshotted at research time for comparison.
+-- ================================================================
+CREATE TABLE IF NOT EXISTS product_corrections (
+  id              SERIAL PRIMARY KEY,
+  product_id      INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+
+  -- Current values (snapshot at research time)
+  current_name           VARCHAR(500),
+  current_company_name   VARCHAR(500),
+  current_distiller_name VARCHAR(500),
+  current_proof          DOUBLE PRECISION,
+  current_abv            DOUBLE PRECISION,
+  current_age_statement  VARCHAR(100),
+  current_spirit_type    VARCHAR(50),
+  current_spirit_subtype VARCHAR(50),
+  current_mash_bill      VARCHAR(300),
+  current_barrel_type    VARCHAR(200),
+  current_description    TEXT,
+  current_msrp_usd       DOUBLE PRECISION,
+
+  -- Proposed corrections from AI research
+  proposed_name           VARCHAR(500),
+  proposed_company_name   VARCHAR(500),
+  proposed_distiller_name VARCHAR(500),
+  proposed_proof          DOUBLE PRECISION,
+  proposed_abv            DOUBLE PRECISION,
+  proposed_age_statement  VARCHAR(100),
+  proposed_spirit_type    VARCHAR(50),
+  proposed_spirit_subtype VARCHAR(50),
+  proposed_mash_bill      VARCHAR(300),
+  proposed_barrel_type    VARCHAR(200),
+  proposed_description    TEXT,
+  proposed_msrp_usd       DOUBLE PRECISION,
+
+  -- Metadata
+  confidence     DOUBLE PRECISION NOT NULL DEFAULT 0,  -- 0-1 AI confidence score
+  sources        TEXT[],                                -- URLs used for research
+  ai_notes       TEXT,                                  -- AI reasoning / explanation
+  status         VARCHAR(20) NOT NULL DEFAULT 'pending'
+    CHECK (status IN ('pending', 'approved', 'rejected', 'partial')),
+  reviewed_by    INTEGER REFERENCES users(id),
+  reviewed_at    TIMESTAMPTZ,
+  created_at     TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_product_corrections_product ON product_corrections(product_id);
+CREATE INDEX IF NOT EXISTS idx_product_corrections_status ON product_corrections(status);
+CREATE INDEX IF NOT EXISTS idx_product_corrections_confidence ON product_corrections(confidence DESC);
+
+-- Track cleanup script progress (resumable batch processing)
+CREATE TABLE IF NOT EXISTS cleanup_progress (
+  id              SERIAL PRIMARY KEY,
+  last_product_id INTEGER NOT NULL DEFAULT 0,
+  products_total  INTEGER NOT NULL DEFAULT 0,
+  products_done   INTEGER NOT NULL DEFAULT 0,
+  status          VARCHAR(20) NOT NULL DEFAULT 'idle'
+    CHECK (status IN ('idle', 'running', 'paused', 'completed', 'error')),
+  error_message   TEXT,
+  started_at      TIMESTAMPTZ,
+  updated_at      TIMESTAMPTZ DEFAULT NOW()
+);
