@@ -4,6 +4,7 @@ import { Virtuoso } from 'react-virtuoso';
 import type { BunkerListItem, BunkerCardFields } from '../../types/bunker';
 import StarRatingInput from '../ui/StarRatingInput';
 import Badge from '../ui/Badge';
+import { formatProof } from '../../utils/format';
 
 interface BunkerTableProps {
   items: BunkerListItem[];
@@ -19,7 +20,7 @@ function buildDetailSummary(item: BunkerListItem): string {
   if (item.batch_number) parts.push(`Batch: ${item.batch_number}`);
   if (item.barrel_number) parts.push(`Barrel: ${item.barrel_number}`);
   if (item.year_distilled != null) parts.push(`Dist. ${item.year_distilled}`);
-  if (item.proof != null) parts.push(`${item.proof}pf`);
+  if (item.proof != null) parts.push(`${formatProof(item.proof)}pf`);
   else if (item.abv != null) parts.push(`${parseFloat((Number(item.abv) * 100).toFixed(1))}% ABV`);
   if (item.age_statement) parts.push(item.age_statement);
   if (item.release_year != null) parts.push(`Rel. ${item.release_year}`);

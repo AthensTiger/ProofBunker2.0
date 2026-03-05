@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSharedBunkerItems } from '../hooks/useShares';
 import StarRating from '../components/ui/StarRating';
+import { formatProof } from '../utils/format';
 
 export default function SharedBunkerViewPage() {
   const { shareId } = useParams<{ shareId: string }>();
@@ -75,7 +76,7 @@ export default function SharedBunkerViewPage() {
                   <td className="px-4 py-3 font-medium text-gray-900 text-sm">{item.name}</td>
                   <td className="px-4 py-3 text-sm text-gray-600 hidden md:table-cell">{item.company_name || '--'}</td>
                   <td className="px-4 py-3 text-sm text-gray-600 hidden lg:table-cell capitalize">{item.spirit_type}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600 hidden sm:table-cell">{item.proof || '--'}</td>
+                  <td className="px-4 py-3 text-sm text-gray-600 hidden sm:table-cell">{item.proof != null ? formatProof(item.proof) : '--'}</td>
                   {vis.show_ratings && (
                     <td className="px-4 py-3">
                       <StarRating rating={item.personal_rating ?? null} />

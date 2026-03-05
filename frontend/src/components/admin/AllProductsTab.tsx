@@ -3,6 +3,7 @@ import { useAllProducts, useDeleteProduct } from '../../hooks/useAdmin';
 import { useUIStore } from '../../stores/uiStore';
 import ProductEditModal from './ProductEditModal';
 import type { AdminProductFilters } from '../../types/product';
+import { formatProof } from '../../utils/format';
 
 const STATUS_COLORS: Record<string, string> = {
   approved: 'bg-green-100 text-green-800',
@@ -80,7 +81,7 @@ export default function AllProductsTab() {
                 <p className="text-xs text-gray-500">
                   {p.company_name && `${p.company_name} · `}
                   <span className="capitalize">{p.spirit_subtype || p.spirit_type}</span>
-                  {p.proof && ` · ${p.proof}pf`}
+                  {p.proof != null && ` · ${formatProof(p.proof)}pf`}
                 </p>
               </div>
               <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${STATUS_COLORS[p.approval_status] || 'bg-gray-100 text-gray-600'}`}>

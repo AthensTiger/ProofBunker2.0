@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useMenuPreview } from '../hooks/useMenus';
 import StarRating from '../components/ui/StarRating';
 import { exportElementToPdf } from '../utils/exportPdf';
+import { formatProof } from '../utils/format';
 import { useUIStore } from '../stores/uiStore';
 
 export default function MenuPreviewPage() {
@@ -126,7 +127,7 @@ export default function MenuPreviewPage() {
 
         {/* Proof */}
         {settings.show_proof && item.proof != null && (
-          <p className="mt-0.5 text-gray-400">{item.proof} proof</p>
+          <p className="mt-0.5 text-gray-400">{formatProof(item.proof)} proof</p>
         )}
 
         {/* Batch / Barrel / Year Distilled / Release Year */}

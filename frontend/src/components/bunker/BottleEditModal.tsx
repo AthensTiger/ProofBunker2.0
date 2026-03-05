@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import type { BunkerBottle } from '../../types/bunker';
 import type { StorageLocation } from '../../types/location';
 import { useUpdateBottle } from '../../hooks/useBunker';
+import { formatProof } from '../../utils/format';
 import { useResearchProduct } from '../../hooks/useProducts';
 import { useUIStore } from '../../stores/uiStore';
 import Dialog from '../ui/Dialog';
@@ -72,7 +73,7 @@ export default function BottleEditModal({ bottle, locations, onClose, onDelete, 
       setBarrelNumber(bottle.barrel_number ?? '');
       setYearDistilled(bottle.year_distilled != null ? String(bottle.year_distilled) : '');
       setReleaseYear(bottle.override_release_year != null ? String(bottle.override_release_year) : '');
-      setProof(bottle.override_proof != null ? String(bottle.override_proof) : '');
+      setProof(bottle.override_proof != null ? formatProof(bottle.override_proof) : '');
       setAbv(bottle.override_abv != null ? fmtAbv(bottle.override_abv) : '');
       setAgeStatement(bottle.override_age_statement ?? '');
       setMashBill(bottle.override_mash_bill ?? '');

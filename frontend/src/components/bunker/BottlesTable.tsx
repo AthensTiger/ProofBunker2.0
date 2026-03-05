@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import type { BunkerBottle } from '../../types/bunker';
 import type { StorageLocation } from '../../types/location';
+import { formatProof } from '../../utils/format';
 import { useDeleteBottle, useUpdateBottle } from '../../hooks/useBunker';
 import { useUIStore } from '../../stores/uiStore';
 import PhotoGallery from './PhotoGallery';
@@ -32,7 +33,7 @@ function formatBottleDetails(bottle: BunkerBottle): string {
   if (bottle.batch_number) parts.push(`Batch: ${bottle.batch_number}`);
   if (bottle.barrel_number) parts.push(`Barrel: ${bottle.barrel_number}`);
   if (bottle.year_distilled != null) parts.push(`Dist. ${bottle.year_distilled}`);
-  if (bottle.override_proof != null) parts.push(`${bottle.override_proof}pf`);
+  if (bottle.override_proof != null) parts.push(`${formatProof(bottle.override_proof)}pf`);
   else if (bottle.override_abv != null) parts.push(`${parseFloat((Number(bottle.override_abv) * 100).toFixed(1))}% ABV`);
   if (bottle.override_age_statement) parts.push(bottle.override_age_statement);
   if (bottle.override_release_year != null) parts.push(`Rel. ${bottle.override_release_year}`);

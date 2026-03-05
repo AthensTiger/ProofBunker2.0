@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { StorageLocation } from '../../types/location';
+import { formatProof } from '../../utils/format';
 import type { AutocompleteResult, CompanyAutocompleteResult, DistillerAutocompleteResult, ResearchResult } from '../../types/product';
 import { useAutocomplete, useCompanyAutocomplete, useDistillerAutocomplete, useProductDetail, useResearchProduct } from '../../hooks/useProducts';
 import { useUIStore } from '../../stores/uiStore';
@@ -116,7 +117,7 @@ export default function SubmitNewProductForm({ initialUpc, locations, onSubmit, 
     setCompanyName(p.company_name || '');
     setDistillerName(p.distiller_name || '');
     setDescription(p.description || '');
-    setProof(p.proof != null ? String(p.proof) : '');
+    setProof(p.proof != null ? formatProof(p.proof) : '');
     setAbv(p.abv != null ? String(parseFloat((Number(p.abv) * 100).toFixed(3))) : '');
     setAgeStatement(p.age_statement || '');
     setVolumeMl(p.volume_ml != null ? String(p.volume_ml) : '');

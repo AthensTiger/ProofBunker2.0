@@ -3,6 +3,7 @@ import type { StorageLocation } from '../../types/location';
 import type { ProductDetail, ResearchResult } from '../../types/product';
 import { useResearchProduct } from '../../hooks/useProducts';
 import { useUIStore } from '../../stores/uiStore';
+import { formatProof } from '../../utils/format';
 import ResearchComparisonModal from '../ui/ResearchComparisonModal';
 
 interface OverrideFields {
@@ -45,7 +46,7 @@ interface BottleDetailsFormProps {
 function productToOverrides(product: ProductDetail | null): Partial<OverrideFields> {
   if (!product) return {};
   const out: Partial<OverrideFields> = {};
-  if (product.proof != null) out.proof = String(product.proof);
+  if (product.proof != null) out.proof = formatProof(product.proof);
   if (product.abv != null) out.abv = parseFloat((Number(product.abv) * 100).toFixed(2)).toString();
   if (product.age_statement) out.age_statement = product.age_statement;
   if (product.mash_bill) out.mash_bill = product.mash_bill;

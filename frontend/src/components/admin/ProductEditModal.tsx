@@ -3,6 +3,7 @@ import { useAdminUpdateProduct, useAdminProduct, useUploadProductImageFromUrl } 
 import { useCompanyAutocomplete, useDistillerAutocomplete, useResearchProduct } from '../../hooks/useProducts';
 import { useUIStore } from '../../stores/uiStore';
 import Combobox from '../ui/Combobox';
+import { formatProof } from '../../utils/format';
 import ResearchComparisonModal from '../ui/ResearchComparisonModal';
 import ProductPhotoUpload from './ProductPhotoUpload';
 import type { CompanyAutocompleteResult, DistillerAutocompleteResult, ResearchResult } from '../../types/product';
@@ -108,7 +109,7 @@ export default function ProductEditModal({ productId, onClose, onSaved }: Produc
     setCompanyName(product.company_name || '');
     setDistillerName(product.distiller_name || '');
     setDescription(product.description || '');
-    setProof(product.proof != null ? String(product.proof) : '');
+    setProof(product.proof != null ? formatProof(product.proof) : '');
     setAbv(product.abv != null ? String(parseFloat((Number(product.abv) * 100).toFixed(3))) : '');
     setAgeStatement(product.age_statement || '');
     setVolumeMl(product.volume_ml != null ? String(product.volume_ml) : '');
