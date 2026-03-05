@@ -119,8 +119,12 @@ export function useRespondToQuestion() {
   const api = useApiClient();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, qid, response }: { id: number; qid: number; response: string }) =>
-      api.post<TicketQuestion>(`/support/tickets/${id}/questions/${qid}/respond`, { response }),
+    mutationFn: ({ id, qid, response, files }: { id: number; qid: number; response: string; files?: File[] }) => {
+      const formData = new FormData();
+      formData.append('response', response);
+      (files || []).forEach((f) => formData.append('attachments', f));
+      return api.postFormData<TicketQuestion>(`/support/tickets/${id}/questions/${qid}/respond`, formData);
+    },
     onSuccess: (_data, vars) => {
       queryClient.invalidateQueries({ queryKey: ['support', 'tickets', vars.id, 'questions'] });
     },

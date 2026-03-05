@@ -14,6 +14,15 @@ export interface TicketAttachment {
   created_at: string;
 }
 
+export interface TicketQuestionAttachment {
+  id: number;
+  question_id: number;
+  cdn_url: string;
+  filename: string;
+  file_size: number | null;
+  created_at: string;
+}
+
 export interface TicketQuestion {
   id: number;
   ticket_id: number;
@@ -23,6 +32,7 @@ export interface TicketQuestion {
   question_sent_at: string;
   response: string | null;
   response_received_at: string | null;
+  response_attachments: TicketQuestionAttachment[];
 }
 
 export interface SupportTicket {

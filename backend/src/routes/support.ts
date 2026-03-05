@@ -33,7 +33,7 @@ router.get('/tickets', getMyTickets);
 router.post('/tickets/:id/reopen', reopenTicket);
 router.get('/tickets/:id/notes', getTicketNotes);
 router.get('/tickets/:id/questions', getTicketQuestions);
-router.post('/tickets/:id/questions/:qid/respond', respondToQuestion);
+router.post('/tickets/:id/questions/:qid/respond', upload.array('attachments', 5), respondToQuestion);
 
 // Tickets (admin)
 router.get('/admin/tickets', requireRole('admin', 'curator'), getAdminTickets);

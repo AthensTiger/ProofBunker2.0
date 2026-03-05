@@ -274,3 +274,19 @@ CREATE TABLE IF NOT EXISTS support_ticket_attachments (
   created_at  TIMESTAMPTZ DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_ticket_attachments_ticket ON support_ticket_attachments(ticket_id);
+
+-- ================================================================
+-- Support Ticket Question Response Attachments — Files attached
+-- by users when responding to admin questions about a ticket.
+-- Files stored in R2 under support/tickets/{ticketId}/responses/{qid}/
+-- ================================================================
+CREATE TABLE IF NOT EXISTS support_ticket_question_attachments (
+  id          SERIAL PRIMARY KEY,
+  question_id INTEGER NOT NULL REFERENCES support_ticket_questions(id) ON DELETE CASCADE,
+  cdn_url     VARCHAR(1000) NOT NULL,
+  storage_key VARCHAR(500) NOT NULL,
+  filename    VARCHAR(255) NOT NULL,
+  file_size   INTEGER,
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_ticket_q_attachments_question ON support_ticket_question_attachments(question_id);

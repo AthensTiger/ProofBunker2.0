@@ -443,7 +443,16 @@ export async function getTicketQuestions(req: Request, res: Response, next: Next
     }
 
     const result = await pool.query(
-      `SELECT * FROM support_ticket_questions WHERE ticket_id = $1 ORDER BY question_sent_at ASC`,
+      `SELECT sq.*,
+         COALESCE(
+           (SELECT json_agg(a ORDER BY a.created_at)
+            FROM support_ticket_question_attachments a
+            WHERE a.question_id = sq.id),
+           '[]'
+         ) AS response_attachments
+       FROM support_ticket_questions sq
+       WHERE sq.ticket_id = $1
+       ORDER BY sq.question_sent_at ASC`,
       [id]
     );
     res.json(result.rows);
@@ -497,9 +506,9 @@ export async function respondToQuestion(req: Request, res: Response, next: NextF
   try {
     const userId = req.user!.id;
     const { id, qid } = req.params;
-    const { response } = req.body;
+    const response = (req.body.response || '').trim();
 
-    if (!response?.trim()) {
+    if (!response) {
       res.status(400).json({ error: 'response is required' });
       return;
     }
@@ -520,14 +529,39 @@ export async function respondToQuestion(req: Request, res: Response, next: NextF
        SET response = $1, response_received_at = NOW()
        WHERE id = $2 AND ticket_id = $3 AND response IS NULL
        RETURNING *`,
-      [response.trim(), qid, id]
+      [response, qid, id]
     );
     if (result.rows.length === 0) {
       res.status(404).json({ error: 'Question not found or already answered' });
       return;
     }
 
-    res.json(result.rows[0]);
+    const updatedQuestion = result.rows[0];
+
+    // Upload any attached files to R2
+    const files = req.files as Express.Multer.File[] | undefined;
+    if (files && files.length > 0) {
+      for (const file of files) {
+        const ext = (file.originalname.split('.').pop() || 'jpg').toLowerCase();
+        const storageKey = `support/tickets/${id}/responses/${qid}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+        await r2Client.send(new PutObjectCommand({
+          Bucket: R2_BUCKET,
+          Key: storageKey,
+          Body: file.buffer,
+          ContentType: file.mimetype,
+          CacheControl: 'public, max-age=31536000',
+        }));
+        const cdnUrl = `${R2_PUBLIC_URL}/${storageKey}`;
+        await pool.query(
+          `INSERT INTO support_ticket_question_attachments (question_id, cdn_url, storage_key, filename, file_size)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [qid, cdnUrl, storageKey, file.originalname, file.size]
+        );
+      }
+    }
+
+    // Return with empty attachments list (caller will refetch questions to get full data)
+    res.json({ ...updatedQuestion, response_attachments: [] });
   } catch (err) {
     next(err);
   }
