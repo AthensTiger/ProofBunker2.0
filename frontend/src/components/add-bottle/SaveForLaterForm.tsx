@@ -25,7 +25,7 @@ export default function SaveForLaterForm({ upc, onSaved, onSubmitNew }: Props) {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    const remaining = 3 - photos.length;
+    const remaining = 2 - photos.length;
     const toAdd = files.slice(0, remaining);
     setPhotos((prev) => [...prev, ...toAdd]);
     toAdd.forEach((f) => {
@@ -91,7 +91,7 @@ export default function SaveForLaterForm({ upc, onSaved, onSubmitNew }: Props) {
 
       {/* Photos */}
       <div>
-        <label className="block text-xs font-medium text-gray-600 mb-2">Photos (optional, up to 3)</label>
+        <label className="block text-xs font-medium text-gray-600 mb-2">Photos (optional, up to 2)</label>
         {previews.length > 0 && (
           <div className="flex gap-2 mb-2 flex-wrap">
             {previews.map((src, idx) => (
@@ -108,7 +108,7 @@ export default function SaveForLaterForm({ upc, onSaved, onSubmitNew }: Props) {
             ))}
           </div>
         )}
-        {photos.length < 3 && (
+        {photos.length < 2 && (
           <>
             <button
               type="button"

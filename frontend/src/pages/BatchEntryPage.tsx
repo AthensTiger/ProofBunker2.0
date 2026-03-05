@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAddToBunker, useCreateUnresolvedScan, useDeleteUnresolvedScan } from '../hooks/useBunker';
+import { useAddToBunker, useCreateUnresolvedScan, useDeleteUnresolvedScan, useUploadUnresolvedScanPhoto } from '../hooks/useBunker';
 import { useLocations } from '../hooks/useLocations';
 import { useUIStore } from '../stores/uiStore';
 import { useUpcLookup } from '../hooks/useProducts';
@@ -17,6 +17,7 @@ interface UnknownEntry {
   id: string;
   upc: string;
   scanId: number;
+  photoUrls: string[];
 }
 
 export default function BatchEntryPage() {
@@ -26,6 +27,7 @@ export default function BatchEntryPage() {
   const addMutation = useAddToBunker();
   const createUnresolvedMutation = useCreateUnresolvedScan();
   const deleteUnresolvedMutation = useDeleteUnresolvedScan();
+  const uploadPhotoMutation = useUploadUnresolvedScanPhoto();
 
   const [upcInput, setUpcInput] = useState('');
   const [searchUpc, setSearchUpc] = useState('');
@@ -34,6 +36,35 @@ export default function BatchEntryPage() {
   const [locationId, setLocationId] = useState<number | undefined>();
   const [saving, setSaving] = useState(false);
   const [scanning, setScanning] = useState(false);
+  const [uploadingScanId, setUploadingScanId] = useState<number | null>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePhotoClick = (scanId: number) => {
+    setUploadingScanId(scanId);
+    photoInputRef.current?.click();
+  };
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || uploadingScanId === null) return;
+    const scanId = uploadingScanId;
+    e.target.value = '';
+    setUploadingScanId(null);
+    uploadPhotoMutation.mutate(
+      { id: scanId, file },
+      {
+        onSuccess: (result) => {
+          const { cdn_url } = result as { cdn_url: string };
+          setUnknownEntries((prev) => prev.map((entry) =>
+            entry.scanId === scanId
+              ? { ...entry, photoUrls: [...entry.photoUrls, cdn_url] }
+              : entry
+          ));
+        },
+        onError: () => addToast('error', 'Failed to upload photo'),
+      }
+    );
+  };
 
   const { data: lookupResult, error: lookupError, isFetching } = useUpcLookup(searchUpc);
 
@@ -58,7 +89,7 @@ export default function BatchEntryPage() {
       { upc, storage_location_id: locId ?? null },
       {
         onSuccess: (scan) => {
-          setUnknownEntries((prev) => [{ id: Date.now().toString(), upc, scanId: scan.id }, ...prev]);
+          setUnknownEntries((prev) => [{ id: Date.now().toString(), upc, scanId: scan.id, photoUrls: [] }, ...prev]);
           addToast('info', `Unknown barcode saved — match it to a product later`);
         },
         onError: () => addToast('error', `Could not save unknown barcode: ${upc}`),
@@ -215,27 +246,62 @@ export default function BatchEntryPage() {
             Unknown Barcodes ({unknownEntries.length})
           </h2>
           <p className="text-xs text-amber-700 mb-3">Saved — match each one to a product from My Bunker.</p>
-          <div className="space-y-2">
+          <div className="space-y-3">
             {unknownEntries.map((entry) => (
-              <div key={entry.id} className="flex items-center justify-between py-2 border-b border-amber-100 last:border-0">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded bg-amber-100 flex items-center justify-center">
-                    <svg className="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+              <div key={entry.id} className="py-2 border-b border-amber-100 last:border-0">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded bg-amber-100 flex items-center justify-center flex-shrink-0">
+                      <svg className="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <p className="font-mono text-sm font-medium text-gray-900">{entry.upc}</p>
                   </div>
-                  <p className="font-mono text-sm font-medium text-gray-900">{entry.upc}</p>
+                  <div className="flex items-center gap-3">
+                    {entry.photoUrls.length < 2 && (
+                      <button
+                        type="button"
+                        onClick={() => handlePhotoClick(entry.scanId)}
+                        disabled={uploadPhotoMutation.isPending && uploadingScanId === entry.scanId}
+                        title="Add photo"
+                        className="text-amber-600 hover:text-amber-800 disabled:opacity-50"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                          <circle cx="12" cy="13" r="4"/>
+                        </svg>
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleRemoveUnknown(entry)}
+                      disabled={deleteUnresolvedMutation.isPending}
+                      className="text-sm text-red-500 hover:text-red-700 disabled:opacity-50"
+                    >
+                      Remove
+                    </button>
+                  </div>
                 </div>
-                <button
-                  onClick={() => handleRemoveUnknown(entry)}
-                  disabled={deleteUnresolvedMutation.isPending}
-                  className="text-sm text-red-500 hover:text-red-700 disabled:opacity-50"
-                >
-                  Remove
-                </button>
+                {entry.photoUrls.length > 0 && (
+                  <div className="flex gap-2 mt-2 ml-11">
+                    {entry.photoUrls.map((url, i) => (
+                      <img key={i} src={url} alt="" className="w-14 h-14 object-cover rounded border border-amber-200" />
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>
+
+          {/* Shared hidden file input for photo capture */}
+          <input
+            ref={photoInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={handlePhotoChange}
+          />
         </div>
       )}
 
