@@ -367,6 +367,16 @@ CREATE INDEX IF NOT EXISTS idx_product_corrections_product ON product_correction
 CREATE INDEX IF NOT EXISTS idx_product_corrections_status ON product_corrections(status);
 CREATE INDEX IF NOT EXISTS idx_product_corrections_confidence ON product_corrections(confidence DESC);
 
+-- ================================================================
+-- Age Statement Normalization
+-- Standardize all age_statement values: strip "Year"/"Years" suffixes,
+-- store just the number. "NAS" for no-age-statement products.
+-- Display formatting ("12 Years") is handled in frontend.
+-- ================================================================
+UPDATE products SET age_statement = regexp_replace(TRIM(age_statement), '\s*(Years?|Yr|yr).*$', '', 'i')
+  WHERE age_statement IS NOT NULL AND age_statement ~* '\d+\s*(Years?|Yr|yr)';
+UPDATE products SET age_statement = 'NAS' WHERE age_statement IN ('Unaged', '0');
+
 -- Track cleanup script progress (resumable batch processing)
 CREATE TABLE IF NOT EXISTS cleanup_progress (
   id              SERIAL PRIMARY KEY,

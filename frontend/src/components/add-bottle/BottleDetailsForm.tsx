@@ -3,7 +3,7 @@ import type { StorageLocation } from '../../types/location';
 import type { ProductDetail, ResearchResult } from '../../types/product';
 import { useResearchProduct } from '../../hooks/useProducts';
 import { useUIStore } from '../../stores/uiStore';
-import { formatProof } from '../../utils/format';
+import { formatProof, normalizeAgeStatement } from '../../utils/format';
 import ResearchComparisonModal from '../ui/ResearchComparisonModal';
 
 interface OverrideFields {
@@ -72,6 +72,7 @@ export default function BottleDetailsForm({
   const [price, setPrice] = useState('');
   const [showDetails, setShowDetails] = useState(false);
   const [overrides, setOverrides] = useState<OverrideFields>(EMPTY_OVERRIDES);
+  const [isNas, setIsNas] = useState(false);
 
   // Pre-populate from product data when it loads; auto-expand the section
   useEffect(() => {
@@ -80,6 +81,7 @@ export default function BottleDetailsForm({
     if (Object.keys(vals).length > 0) {
       setOverrides((prev) => ({ ...prev, ...vals }));
       setShowDetails(true);
+      if (vals.age_statement?.toUpperCase() === 'NAS') setIsNas(true);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productDetail?.id]);
@@ -103,7 +105,7 @@ export default function BottleDetailsForm({
       proof:          toNum(overrides.proof),
       // ABV entered as percentage (45.5), stored as fraction (0.455)
       abv:            overrides.abv.trim() ? parseFloat((parseFloat(overrides.abv) / 100).toFixed(6)) : null,
-      age_statement:  toStr(overrides.age_statement),
+      age_statement:  isNas ? 'NAS' : normalizeAgeStatement(overrides.age_statement),
       mash_bill:      toStr(overrides.mash_bill),
     });
   };
@@ -119,7 +121,10 @@ export default function BottleDetailsForm({
   const handleApplyResearch = (selected: Partial<ResearchResult>) => {
     if (selected.proof != null) setField('proof', String(selected.proof));
     if (selected.abv != null) setField('abv', parseFloat((selected.abv * 100).toFixed(2)).toString());
-    if (selected.age_statement != null) setField('age_statement', selected.age_statement);
+    if (selected.age_statement != null) {
+      setField('age_statement', selected.age_statement);
+      setIsNas(selected.age_statement.toUpperCase() === 'NAS');
+    }
     if (selected.mash_bill != null) setField('mash_bill', selected.mash_bill);
     setResearchResult(null);
     setShowDetails(true);
@@ -273,7 +278,13 @@ export default function BottleDetailsForm({
                       <span className="ml-1 text-[10px] text-amber-600 font-normal">from product</span>
                     )}
                   </label>
-                  <input type="text" value={overrides.age_statement} onChange={(e) => setField('age_statement', e.target.value)} placeholder="e.g., 12 Year" className={inputClass} />
+                  <div className="flex items-center gap-2">
+                    <input type="text" value={isNas ? '' : overrides.age_statement} onChange={(e) => setField('age_statement', e.target.value)} placeholder={isNas ? 'NAS' : 'e.g., 12'} disabled={isNas} className={`${inputClass} ${isNas ? 'bg-gray-100 text-gray-400' : ''}`} />
+                    <label className="flex items-center gap-1 text-xs text-gray-600 whitespace-nowrap cursor-pointer">
+                      <input type="checkbox" checked={isNas} onChange={(e) => { setIsNas(e.target.checked); if (e.target.checked) setField('age_statement', ''); }} className="rounded border-gray-300 text-amber-700 focus:ring-amber-500" />
+                      NAS
+                    </label>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import type { BunkerBottle } from '../../types/bunker';
 import type { StorageLocation } from '../../types/location';
 import { useUpdateBottle } from '../../hooks/useBunker';
-import { formatProof } from '../../utils/format';
+import { formatProof, normalizeAgeStatement } from '../../utils/format';
 import { useResearchProduct } from '../../hooks/useProducts';
 import { useUIStore } from '../../stores/uiStore';
 import Dialog from '../ui/Dialog';
@@ -48,6 +48,7 @@ export default function BottleEditModal({ bottle, locations, onClose, onDelete, 
   const [proof, setProof] = useState('');
   const [abv, setAbv] = useState('');
   const [ageStatement, setAgeStatement] = useState('');
+  const [isNas, setIsNas] = useState(false);
   const [mashBill, setMashBill] = useState('');
 
   const [researchResult, setResearchResult] = useState<any>(null);
@@ -77,7 +78,9 @@ export default function BottleEditModal({ bottle, locations, onClose, onDelete, 
       setReleaseYear(bottle.override_release_year != null ? String(bottle.override_release_year) : '');
       setProof(bottle.override_proof != null ? formatProof(bottle.override_proof) : '');
       setAbv(bottle.override_abv != null ? fmtAbv(bottle.override_abv) : '');
-      setAgeStatement(bottle.override_age_statement ?? '');
+      const age = bottle.override_age_statement ?? '';
+      setAgeStatement(age);
+      setIsNas(age.toUpperCase() === 'NAS');
       setMashBill(bottle.override_mash_bill ?? '');
     }
   }, [bottle, locations]);
@@ -99,7 +102,10 @@ export default function BottleEditModal({ bottle, locations, onClose, onDelete, 
   const handleApplyResearch = (selected: any) => {
     if (selected.proof != null) setProof(String(selected.proof));
     if (selected.abv != null) setAbv(parseFloat((selected.abv * 100).toFixed(2)).toString());
-    if (selected.age_statement != null) setAgeStatement(selected.age_statement);
+    if (selected.age_statement != null) {
+      setAgeStatement(selected.age_statement);
+      setIsNas(selected.age_statement.toUpperCase() === 'NAS');
+    }
     if (selected.mash_bill != null) setMashBill(selected.mash_bill);
     setResearchResult(null);
   };
@@ -124,7 +130,7 @@ export default function BottleEditModal({ bottle, locations, onClose, onDelete, 
         release_year:   toInt(releaseYear),
         proof:          toNum(proof),
         abv:            abv.trim() ? parseFloat((parseFloat(abv) / 100).toFixed(6)) : null,
-        age_statement:  toStr(ageStatement),
+        age_statement:  isNas ? 'NAS' : normalizeAgeStatement(ageStatement),
         mash_bill:      toStr(mashBill),
       },
       {
@@ -254,19 +260,25 @@ export default function BottleEditModal({ bottle, locations, onClose, onDelete, 
                 <label className="block text-xs font-medium text-gray-600 mb-1">
                   Proof{fromProductLabel(proof, productContext?.proof)}
                 </label>
-                <input type="number" step="0.1" min="0" value={proof} onChange={(e) => setProof(e.target.value)} placeholder="e.g., 90.0" className={inputClass} />
+                <input type="number" step="any" min="0" value={proof} onChange={(e) => setProof(e.target.value)} placeholder="e.g., 90.0" className={inputClass} />
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">
                   ABV (%){fromProductLabel(abv, productContext?.abv)}
                 </label>
-                <input type="number" step="0.1" min="0" max="100" value={abv} onChange={(e) => setAbv(e.target.value)} placeholder="e.g., 45.0" className={inputClass} />
+                <input type="number" step="any" min="0" max="100" value={abv} onChange={(e) => setAbv(e.target.value)} placeholder="e.g., 45.0" className={inputClass} />
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">
                   Age Statement{fromProductLabel(ageStatement, productContext?.age_statement)}
                 </label>
-                <input type="text" value={ageStatement} onChange={(e) => setAgeStatement(e.target.value)} placeholder="e.g., 12 Year" className={inputClass} />
+                <div className="flex items-center gap-2">
+                  <input type="text" value={isNas ? '' : ageStatement} onChange={(e) => setAgeStatement(e.target.value)} placeholder={isNas ? 'NAS' : 'e.g., 12'} disabled={isNas} className={`${inputClass} ${isNas ? 'bg-gray-100 text-gray-400' : ''}`} />
+                  <label className="flex items-center gap-1 text-xs text-gray-600 whitespace-nowrap cursor-pointer">
+                    <input type="checkbox" checked={isNas} onChange={(e) => { setIsNas(e.target.checked); if (e.target.checked) setAgeStatement(''); }} className="rounded border-gray-300 text-amber-700 focus:ring-amber-500" />
+                    NAS
+                  </label>
+                </div>
               </div>
               <div className="col-span-2">
                 <label className="block text-xs font-medium text-gray-600 mb-1">

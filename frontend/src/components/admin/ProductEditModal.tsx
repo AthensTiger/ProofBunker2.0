@@ -3,7 +3,7 @@ import { useAdminUpdateProduct, useAdminProduct, useUploadProductImageFromUrl } 
 import { useCompanyAutocomplete, useDistillerAutocomplete, useResearchProduct } from '../../hooks/useProducts';
 import { useUIStore } from '../../stores/uiStore';
 import Combobox from '../ui/Combobox';
-import { formatProof } from '../../utils/format';
+import { formatProof, normalizeAgeStatement } from '../../utils/format';
 import ResearchComparisonModal from '../ui/ResearchComparisonModal';
 import ProductPhotoUpload from './ProductPhotoUpload';
 import type { CompanyAutocompleteResult, DistillerAutocompleteResult, ResearchResult } from '../../types/product';
@@ -38,6 +38,7 @@ export default function ProductEditModal({ productId, onClose, onSaved }: Produc
   const [proof, setProof] = useState('');
   const [abv, setAbv] = useState('');
   const [ageStatement, setAgeStatement] = useState('');
+  const [isNas, setIsNas] = useState(false);
   const [volumeMl, setVolumeMl] = useState('');
   const [mashBill, setMashBill] = useState('');
   const [msrp, setMsrp] = useState('');
@@ -83,7 +84,11 @@ export default function ProductEditModal({ productId, onClose, onSaved }: Produc
     if (selected.description != null) setDescription(String(selected.description));
     if (selected.proof != null) setProof(String(selected.proof));
     if (selected.abv != null) setAbv(String(parseFloat((Number(selected.abv) * 100).toFixed(3))));
-    if (selected.age_statement != null) setAgeStatement(String(selected.age_statement));
+    if (selected.age_statement != null) {
+      const age = String(selected.age_statement);
+      setAgeStatement(age);
+      setIsNas(age.toUpperCase() === 'NAS');
+    }
     if (selected.volume_ml != null) setVolumeMl(String(selected.volume_ml));
     if (selected.mash_bill != null) setMashBill(String(selected.mash_bill));
     if (selected.msrp_usd != null) setMsrp(String(selected.msrp_usd));
@@ -111,7 +116,9 @@ export default function ProductEditModal({ productId, onClose, onSaved }: Produc
     setDescription(product.description || '');
     setProof(product.proof != null ? formatProof(product.proof) : '');
     setAbv(product.abv != null ? String(parseFloat((Number(product.abv) * 100).toFixed(3))) : '');
-    setAgeStatement(product.age_statement || '');
+    const age = product.age_statement || '';
+    setAgeStatement(age);
+    setIsNas(age.toUpperCase() === 'NAS');
     setVolumeMl(product.volume_ml != null ? String(product.volume_ml) : '');
     setMashBill(product.mash_bill || '');
     setMsrp(product.msrp_usd != null ? String(product.msrp_usd) : '');
@@ -143,7 +150,7 @@ export default function ProductEditModal({ productId, onClose, onSaved }: Produc
       description: description.trim() || null,
       proof: proof ? parseFloat(proof) : null,
       abv: abv ? parseFloat(abv) / 100 : null,
-      age_statement: ageStatement.trim() || null,
+      age_statement: isNas ? 'NAS' : normalizeAgeStatement(ageStatement),
       volume_ml: volumeMl ? parseInt(volumeMl) : null,
       mash_bill: mashBill.trim() || null,
       msrp_usd: msrp ? parseFloat(msrp) : null,
@@ -285,11 +292,17 @@ export default function ProductEditModal({ productId, onClose, onSaved }: Produc
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">ABV (%)</label>
-                  <input type="number" step="0.001" value={abv} onChange={(e) => setAbv(e.target.value)} className={inputCls} />
+                  <input type="number" step="any" value={abv} onChange={(e) => setAbv(e.target.value)} className={inputCls} />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Age Statement</label>
-                  <input type="text" value={ageStatement} onChange={(e) => setAgeStatement(e.target.value)} className={inputCls} />
+                  <div className="flex items-center gap-2">
+                    <input type="text" value={isNas ? '' : ageStatement} onChange={(e) => setAgeStatement(e.target.value)} placeholder={isNas ? 'NAS' : 'e.g., 12'} disabled={isNas} className={`${inputCls} ${isNas ? 'bg-gray-100 text-gray-400' : ''}`} />
+                    <label className="flex items-center gap-1 text-xs text-gray-600 whitespace-nowrap cursor-pointer">
+                      <input type="checkbox" checked={isNas} onChange={(e) => { setIsNas(e.target.checked); if (e.target.checked) setAgeStatement(''); }} className="rounded border-gray-300 text-amber-700 focus:ring-amber-500" />
+                      NAS
+                    </label>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Volume (ml)</label>
