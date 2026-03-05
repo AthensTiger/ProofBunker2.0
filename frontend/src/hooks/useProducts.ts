@@ -118,6 +118,62 @@ export function useResearchProduct() {
   });
 }
 
+export function useScanLabel() {
+  const api = useApiClient();
+  return useMutation({
+    mutationFn: (data: { image: string; media_type: string }) =>
+      api.post<{
+        name: string | null;
+        spirit_type: string | null;
+        spirit_subtype: string | null;
+        company_name: string | null;
+        distiller_name: string | null;
+        proof: number | null;
+        abv: number | null;
+        age_statement: string | null;
+        description: string | null;
+        mash_bill: string | null;
+        barrel_type: string | null;
+        finish_type: string | null;
+        volume_ml: number | null;
+        batch_number: string | null;
+        barrel_number: string | null;
+        confidence: number;
+        notes: string;
+      }>('/products/scan-label', data),
+  });
+}
+
+export function useMarkLabelVerified() {
+  const api = useApiClient();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (productId: number) =>
+      api.put(`/products/${productId}/label-verified`, {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+    },
+  });
+}
+
+export function useLabelStatus(productId: number | null) {
+  const api = useApiClient();
+  return useQuery({
+    queryKey: ['products', 'label-status', productId],
+    queryFn: () => api.get<{ id: number; label_verified: boolean; label_verified_at: string | null; label_verification_count: number }>(`/products/${productId}/label-status`),
+    enabled: productId !== null && productId > 0,
+  });
+}
+
+export function usePublicSettings() {
+  const api = useApiClient();
+  return useQuery({
+    queryKey: ['settings', 'public'],
+    queryFn: () => api.get<Record<string, unknown>>('/settings/public'),
+    staleTime: 60_000,
+  });
+}
+
 export function useProductDetail(id: number | null) {
   const api = useApiClient();
   return useQuery({

@@ -23,9 +23,10 @@ import SupportTicketsTab from '../components/support/SupportTicketsTab';
 import PostsApprovalTab from '../components/admin/PostsApprovalTab';
 import ReleaseNotesTab from '../components/admin/ReleaseNotesTab';
 import DataCleanupTab from '../components/admin/DataCleanupTab';
+import SettingsTab from '../components/admin/SettingsTab';
 import type { CompanyAutocompleteResult, DistillerAutocompleteResult } from '../types/product';
 
-type Tab = 'pending-products' | 'all-products' | 'data-cleanup' | 'unverified-companies' | 'all-companies' | 'unverified-distillers' | 'all-distillers' | 'users' | 'support-tickets' | 'posts-approval' | 'release-notes';
+type Tab = 'pending-products' | 'all-products' | 'data-cleanup' | 'unverified-companies' | 'all-companies' | 'unverified-distillers' | 'all-distillers' | 'users' | 'support-tickets' | 'posts-approval' | 'release-notes' | 'settings';
 
 const TABS: [Tab, string][] = [
   ['pending-products', 'Pending Products'],
@@ -39,6 +40,7 @@ const TABS: [Tab, string][] = [
   ['support-tickets', 'Support Tickets'],
   ['posts-approval', 'Posts Approval'],
   ['release-notes', 'Release Notes'],
+  ['settings', 'Settings'],
 ];
 
 export default function AdminPage() {
@@ -83,6 +85,7 @@ export default function AdminPage() {
       {tab === 'support-tickets' && <SupportTicketsTab />}
       {tab === 'posts-approval' && <PostsApprovalTab />}
       {tab === 'release-notes' && <ReleaseNotesTab />}
+      {tab === 'settings' && <SettingsTab />}
       </div>
     </div>
   );

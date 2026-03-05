@@ -22,6 +22,7 @@ import notificationsRoutes from './routes/notifications';
 import postsRoutes from './routes/posts';
 import releaseNotesRoutes from './routes/releaseNotes';
 import correctionsRoutes from './routes/corrections';
+import { getPublicSettings } from './controllers/settingsController';
 import { startAutoCloseJob } from './jobs/autoCloseTickets';
 
 const app = express();
@@ -35,7 +36,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
 }));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 // Health check
 app.get('/health', async (_req, res) => {
@@ -64,6 +65,7 @@ app.use('/api/v1/notifications', notificationsRoutes);
 app.use('/api/v1/posts', postsRoutes);
 app.use('/api/v1/release-notes', releaseNotesRoutes);
 app.use('/api/v1/corrections', correctionsRoutes);
+app.get('/api/v1/settings/public', getPublicSettings);
 
 // Error handler (must be last)
 app.use(errorHandler);

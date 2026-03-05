@@ -312,6 +312,29 @@ export function useUpdateUserFeatures() {
   });
 }
 
+// ── System Settings ──────────────────────────────────
+
+export function useAdminSettings() {
+  const api = useApiClient();
+  return useQuery({
+    queryKey: ['admin', 'settings'],
+    queryFn: () => api.get<Record<string, unknown>>('/admin/settings'),
+  });
+}
+
+export function useUpdateSettings() {
+  const api = useApiClient();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (settings: Record<string, unknown>) =>
+      api.put<Record<string, unknown>>('/admin/settings', settings),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'settings'] });
+      queryClient.invalidateQueries({ queryKey: ['settings', 'public'] });
+    },
+  });
+}
+
 // ── Product Corrections ──────────────────────────────
 
 export function useCorrections(filters: { status?: string; min_confidence?: number; sort_by?: string; sort_dir?: string; limit?: number; offset?: number }) {
