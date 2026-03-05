@@ -12,6 +12,7 @@ export async function submitProduct(req: Request, res: Response, next: NextFunct
       is_single_cask, cask_strength, msrp_usd, description,
       company_name, distiller_name, upc,
       storage_location_id, status, purchase_price,
+      scan_id,
     } = req.body;
 
     if (!name?.trim() || !spirit_type) {
@@ -107,11 +108,36 @@ export async function submitProduct(req: Request, res: Response, next: NextFunct
       );
 
       // Create a bottle
-      await client.query(
+      const bottleResult = await client.query(
         `INSERT INTO bunker_bottles (bunker_item_id, storage_location_id, status, purchase_price)
-         VALUES ($1, $2, $3, $4)`,
+         VALUES ($1, $2, $3, $4) RETURNING id`,
         [itemResult.rows[0].id, storage_location_id || null, status || 'sealed', purchase_price || null]
       );
+      const bottleId = bottleResult.rows[0].id;
+
+      // If submitted from an unresolved scan, transfer photos and delete the scan
+      if (scan_id) {
+        const scanOwner = await client.query(
+          'SELECT id FROM unresolved_bottle_scans WHERE id = $1 AND user_id = $2',
+          [scan_id, userId]
+        );
+        if (scanOwner.rows.length > 0) {
+          const r2Base = process.env.R2_PUBLIC_URL || '';
+          const photos = await client.query(
+            'SELECT cdn_url, display_order FROM unresolved_scan_photos WHERE scan_id = $1 ORDER BY display_order',
+            [scan_id]
+          );
+          for (const photo of photos.rows) {
+            const storageKey = r2Base ? photo.cdn_url.replace(r2Base + '/', '') : photo.cdn_url;
+            await client.query(
+              `INSERT INTO bunker_bottle_photos (bunker_bottle_id, storage_key, cdn_url, display_order)
+               VALUES ($1, $2, $3, $4)`,
+              [bottleId, storageKey, photo.cdn_url, photo.display_order]
+            );
+          }
+          await client.query('DELETE FROM unresolved_bottle_scans WHERE id = $1', [scan_id]);
+        }
+      }
 
       await client.query('COMMIT');
 

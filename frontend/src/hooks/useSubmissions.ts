@@ -18,6 +18,7 @@ interface SubmitProductRequest {
   storage_location_id?: number;
   status?: string;
   purchase_price?: number;
+  scan_id?: number;
 }
 
 interface SubmitProductResponse {
@@ -33,7 +34,7 @@ export function useSubmitProduct() {
     mutationFn: (body: SubmitProductRequest) =>
       api.post<SubmitProductResponse>('/submissions', body),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['bunker', 'list'] });
+      queryClient.invalidateQueries({ queryKey: ['bunker'] });
     },
   });
 }
