@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { formatProof } from '../../utils/format';
+import { formatProof, formatAgeStatement } from '../../utils/format';
 
 interface FieldDef {
   key: string;
@@ -15,7 +15,7 @@ const FIELDS: FieldDef[] = [
   { key: 'distiller_name', label: 'Distiller' },
   { key: 'proof', label: 'Proof', format: (v) => formatProof(Number(v)) },
   { key: 'abv', label: 'ABV', format: (v) => `${(Number(v) * 100).toFixed(1)}%` },
-  { key: 'age_statement', label: 'Age Statement' },
+  { key: 'age_statement', label: 'Age Statement', format: (v) => formatAgeStatement(String(v)) },
   { key: 'mash_bill', label: 'Mash Bill' },
   { key: 'barrel_type', label: 'Barrel Type' },
   { key: 'finish_type', label: 'Finish Type' },

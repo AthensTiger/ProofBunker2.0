@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { BunkerItemDetail } from '../../types/bunker';
-import { formatProof } from '../../utils/format';
+import { formatProof, formatAgeStatement } from '../../utils/format';
 import type { TastingNote, ResearchResult } from '../../types/product';
 import type { UserRecord } from '../../types/user';
 import { useUpdateProduct, useUpsertTastingNote, useDeleteTastingNote, useResearchProduct } from '../../hooks/useProducts';
@@ -102,7 +102,7 @@ export default function ProductInfoSection({ item, user }: ProductInfoSectionPro
             {item.spirit_subtype && <Detail label="Subtype" value={item.spirit_subtype} capitalize />}
             {item.proof != null && <Detail label="Proof" value={formatProof(item.proof)} />}
             {item.abv != null && <Detail label="ABV" value={`${parseFloat((Number(item.abv) * 100).toFixed(1))}%`} />}
-            {item.age_statement && <Detail label="Age" value={item.age_statement} />}
+            {item.age_statement && <Detail label="Age" value={formatAgeStatement(item.age_statement)} />}
             {item.volume_ml != null && <Detail label="Volume" value={`${item.volume_ml}ml`} />}
             {item.msrp_usd != null && <Detail label="MSRP" value={`$${item.msrp_usd.toFixed(2)}`} />}
             {item.distiller_name && <Detail label="Distiller" value={item.distiller_name} />}

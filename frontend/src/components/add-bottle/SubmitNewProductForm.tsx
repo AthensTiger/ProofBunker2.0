@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { StorageLocation } from '../../types/location';
-import { formatProof } from '../../utils/format';
+import { formatProof, normalizeAgeStatement } from '../../utils/format';
 import type { AutocompleteResult, CompanyAutocompleteResult, DistillerAutocompleteResult, ResearchResult } from '../../types/product';
 import { useAutocomplete, useCompanyAutocomplete, useDistillerAutocomplete, useProductDetail, useResearchProduct } from '../../hooks/useProducts';
 import { useUIStore } from '../../stores/uiStore';
@@ -38,6 +38,7 @@ export default function SubmitNewProductForm({ initialUpc, locations, onSubmit, 
   const [proof, setProof] = useState('');
   const [abv, setAbv] = useState('');
   const [ageStatement, setAgeStatement] = useState('');
+  const [isNas, setIsNas] = useState(false);
   const [volumeMl, setVolumeMl] = useState('');
   const [mashBill, setMashBill] = useState('');
   const [msrp, setMsrp] = useState('');
@@ -97,7 +98,11 @@ export default function SubmitNewProductForm({ initialUpc, locations, onSubmit, 
     if (selected.description != null) setDescription(String(selected.description));
     if (selected.proof != null) setProof(String(selected.proof));
     if (selected.abv != null) setAbv(String(parseFloat((Number(selected.abv) * 100).toFixed(3))));
-    if (selected.age_statement != null) setAgeStatement(String(selected.age_statement));
+    if (selected.age_statement != null) {
+      const age = String(selected.age_statement);
+      setAgeStatement(age);
+      setIsNas(age.toUpperCase() === 'NAS');
+    }
     if (selected.volume_ml != null) setVolumeMl(String(selected.volume_ml));
     if (selected.mash_bill != null) setMashBill(String(selected.mash_bill));
     if (selected.msrp_usd != null) setMsrp(String(selected.msrp_usd));
@@ -119,7 +124,9 @@ export default function SubmitNewProductForm({ initialUpc, locations, onSubmit, 
     setDescription(p.description || '');
     setProof(p.proof != null ? formatProof(p.proof) : '');
     setAbv(p.abv != null ? String(parseFloat((Number(p.abv) * 100).toFixed(3))) : '');
-    setAgeStatement(p.age_statement || '');
+    const age = p.age_statement || '';
+    setAgeStatement(age);
+    setIsNas(age.toUpperCase() === 'NAS');
     setVolumeMl(p.volume_ml != null ? String(p.volume_ml) : '');
     setMashBill(p.mash_bill || '');
     setMsrp(p.msrp_usd != null ? String(p.msrp_usd) : '');
@@ -140,6 +147,7 @@ export default function SubmitNewProductForm({ initialUpc, locations, onSubmit, 
     setProof('');
     setAbv('');
     setAgeStatement('');
+    setIsNas(false);
     setVolumeMl('');
     setMashBill('');
     setMsrp('');
@@ -179,7 +187,7 @@ export default function SubmitNewProductForm({ initialUpc, locations, onSubmit, 
       description: description.trim() || undefined,
       proof: proof ? parseFloat(proof) : undefined,
       abv: abv ? parseFloat(abv) / 100 : undefined,
-      age_statement: ageStatement.trim() || undefined,
+      age_statement: isNas ? 'NAS' : normalizeAgeStatement(ageStatement) || undefined,
       volume_ml: volumeMl ? parseInt(volumeMl) : undefined,
       mash_bill: mashBill.trim() || undefined,
       msrp_usd: msrp ? parseFloat(msrp) : undefined,
@@ -352,8 +360,14 @@ export default function SubmitNewProductForm({ initialUpc, locations, onSubmit, 
               <input type="number" step="any" value={abv} onChange={(e) => setAbv(e.target.value)} placeholder="e.g., 45.0" className={inputCls} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Age Statement <HelpTip text='Years aged as stated on the label (e.g., "12 Years"). Leave blank for NAS (No Age Statement) products.' /></label>
-              <input type="text" value={ageStatement} onChange={(e) => setAgeStatement(e.target.value)} placeholder="e.g., 10 Years" className={inputCls} />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Age Statement <HelpTip text='Years aged as stated on the label (e.g., "12"). Check NAS if no age statement.' /></label>
+              <div className="flex items-center gap-2">
+                <input type="text" value={isNas ? '' : ageStatement} onChange={(e) => setAgeStatement(e.target.value)} placeholder={isNas ? 'NAS' : 'e.g., 12'} disabled={isNas} className={`${inputCls} ${isNas ? 'bg-gray-100 text-gray-400' : ''}`} />
+                <label className="flex items-center gap-1 text-xs text-gray-600 whitespace-nowrap cursor-pointer">
+                  <input type="checkbox" checked={isNas} onChange={(e) => { setIsNas(e.target.checked); if (e.target.checked) setAgeStatement(''); }} className="rounded border-gray-300 text-amber-700 focus:ring-amber-500" />
+                  NAS
+                </label>
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Volume (ml) <HelpTip text="Bottle size in milliliters. Common sizes: 50ml (mini), 375ml (half), 750ml (standard), 1000ml, 1750ml (handle)." /></label>
