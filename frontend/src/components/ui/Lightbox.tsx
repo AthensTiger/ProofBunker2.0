@@ -16,10 +16,20 @@ export default function Lightbox({ images, initialIndex, onClose }: LightboxProp
       if (e.key === 'ArrowLeft') setIndex((i) => Math.max(i - 1, 0));
     };
     document.addEventListener('keydown', handleKey);
+    const scrollY = window.scrollY;
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.left = '0';
+    document.body.style.right = '0';
     document.body.style.overflow = 'hidden';
     return () => {
       document.removeEventListener('keydown', handleKey);
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.body.style.right = '';
       document.body.style.overflow = '';
+      window.scrollTo(0, scrollY);
     };
   }, [images.length, onClose]);
 
