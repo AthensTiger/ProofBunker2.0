@@ -1,6 +1,6 @@
 import { Resend } from 'resend';
 
-const FROM = 'Proof Bunker <onboarding@resend.dev>';
+const FROM = 'Proof Bunker <noreply@proofbunker.com>';
 const APP_URL = 'https://proofbunker.netlify.app';
 
 export async function sendTicketResolvedEmail(to: string, title: string): Promise<void> {
