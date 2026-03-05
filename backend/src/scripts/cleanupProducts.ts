@@ -41,6 +41,8 @@ interface ProductRow {
   msrp_usd: number | null;
   company_name: string | null;
   distiller_name: string | null;
+  producer_name: string | null;
+  parent_company: string | null;
   upc: string | null;
 }
 
@@ -50,6 +52,8 @@ interface AICorrection {
   spirit_subtype: string | null;
   company_name: string | null;
   distiller_name: string | null;
+  producer_name: string | null;
+  parent_company: string | null;
   proof: number | null;
   abv: number | null;
   age_statement: string | null;
@@ -130,9 +134,10 @@ Step 4: If the UPC search returns no useful results, rely on the name search but
 IMPORTANT RULES:
 - The bottle label is the ultimate source of truth. Prioritize data from the producer/brand's official website.
 - The product name should be the EXACT name as printed on the bottle label (e.g., "Buffalo Trace Kentucky Straight Bourbon Whiskey", not "BUFFALO TRACE BOURBON 750ML").
-- Producer/brand name = the name on the front of the bottle (e.g., "Buffalo Trace", "Pursuit United").
-- Distiller = the physical facility where the spirit was made. This may be different from the producer (NDPs). If undisclosed, use "Undisclosed (State)" format, e.g., "Undisclosed (Indiana)".
-- Company = the parent corporate entity. Less important than producer — only include if clearly identified.
+- Producer = the brand name on the front of the bottle (e.g., "Barrell Craft Spirits", "Maker's Mark", "Pursuit United"). This is the brand that makes/bottles the product.
+- Distiller = the physical facility where the spirit was distilled. Often different from producer for NDPs (Non-Distiller Producers). If undisclosed, use "Undisclosed (State)" format, e.g., "Undisclosed (Indiana)".
+- Company = the brand/company name traditionally associated with this product line — may be the same as producer.
+- Parent Company = the ultimate corporate parent entity that owns the brand (e.g., "Beam Suntory" owns Maker's Mark, "Sazerac Company" owns Buffalo Trace, "Campari Group" owns Wild Turkey). Only include if clearly identified.
 - Do NOT guess. If you cannot verify a field from authoritative sources, set it to null.
 - ABV should be a decimal fraction (0.45 = 45%). Proof = ABV * 2.
 - In your notes, explicitly state whether the UPC confirmed the product identity, and flag any discrepancies between UPC and name search results.
@@ -142,8 +147,10 @@ Return ONLY valid JSON matching this schema:
   "name": "string or null - exact label name",
   "spirit_type": "string or null - one of: whiskey, tequila, mezcal, rum, vodka, gin, brandy, liqueur, other",
   "spirit_subtype": "string or null - e.g. 'bourbon', 'rye', 'single malt', 'reposado'",
-  "company_name": "string or null - parent company / brand owner",
+  "company_name": "string or null - brand/company name",
   "distiller_name": "string or null - actual distillery or 'Undisclosed (State)'",
+  "producer_name": "string or null - brand name on the bottle front (the producer/bottler)",
+  "parent_company": "string or null - ultimate corporate parent (e.g. 'Beam Suntory', 'Sazerac Company')",
   "proof": "number or null",
   "abv": "number or null - decimal fraction",
   "age_statement": "string or null - e.g. '12 Years', 'NAS'",
@@ -161,6 +168,8 @@ Return ONLY valid JSON matching this schema:
 - Spirit Subtype: ${product.spirit_subtype || 'N/A'}
 - Company: ${product.company_name || 'N/A'}
 - Distiller: ${product.distiller_name || 'N/A'}
+- Producer: ${product.producer_name || 'N/A'}
+- Parent Company: ${product.parent_company || 'N/A'}
 - Proof: ${product.proof || 'N/A'}
 - ABV: ${product.abv || 'N/A'}
 - Age Statement: ${product.age_statement || 'N/A'}
@@ -255,6 +264,8 @@ async function processProduct(pool: Pool, product: ProductRow): Promise<boolean>
     (correction.name && correction.name !== product.name) ||
     (correction.company_name && correction.company_name !== product.company_name) ||
     (correction.distiller_name && correction.distiller_name !== product.distiller_name) ||
+    (correction.producer_name && correction.producer_name !== product.producer_name) ||
+    (correction.parent_company && correction.parent_company !== product.parent_company) ||
     (correction.proof !== null && correction.proof !== product.proof) ||
     (correction.abv !== null && correction.abv !== product.abv) ||
     (correction.age_statement && correction.age_statement !== product.age_statement) ||
@@ -277,27 +288,31 @@ async function processProduct(pool: Pool, product: ProductRow): Promise<boolean>
     `INSERT INTO product_corrections (
        product_id,
        current_name, current_company_name, current_distiller_name,
+       current_producer_name, current_parent_company,
        current_proof, current_abv, current_age_statement,
        current_spirit_type, current_spirit_subtype,
        current_mash_bill, current_barrel_type, current_description, current_msrp_usd,
        proposed_name, proposed_company_name, proposed_distiller_name,
+       proposed_producer_name, proposed_parent_company,
        proposed_proof, proposed_abv, proposed_age_statement,
        proposed_spirit_type, proposed_spirit_subtype,
        proposed_mash_bill, proposed_barrel_type, proposed_description, proposed_msrp_usd,
        confidence, sources, ai_notes
      ) VALUES (
        $1,
-       $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
-       $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25,
-       $26, $27, $28
+       $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
+       $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29,
+       $30, $31, $32
      )`,
     [
       product.id,
       product.name, product.company_name, product.distiller_name,
+      product.producer_name, product.parent_company,
       product.proof, product.abv, product.age_statement,
       product.spirit_type, product.spirit_subtype,
       product.mash_bill, product.barrel_type, product.description, product.msrp_usd,
       correction.name, correction.company_name, correction.distiller_name,
+      correction.producer_name, correction.parent_company,
       correction.proof, correction.abv, correction.age_statement,
       correction.spirit_type, correction.spirit_subtype,
       correction.mash_bill, correction.barrel_type, correction.description, correction.msrp_usd,
