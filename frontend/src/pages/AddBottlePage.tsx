@@ -283,7 +283,7 @@ export default function AddBottlePage() {
           productName={selectedProduct?.name}
           onResult={(data) => {
             setShowLabelScanner(false);
-            setLabelScanResult(data);
+            setLabelScanResult({ ...data });
           }}
           onClose={() => setShowLabelScanner(false)}
         />
