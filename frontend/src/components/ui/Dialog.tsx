@@ -12,11 +12,23 @@ export default function Dialog({ open, onClose, title, children }: DialogProps) 
 
   useEffect(() => {
     if (open) {
+      // iOS-safe scroll lock: position:fixed preserves keyboard behavior
+      // while overflow:hidden alone blocks the virtual keyboard on iOS Safari.
+      const scrollY = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.left = '0';
+      document.body.style.right = '0';
       document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
+      return () => {
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.left = '';
+        document.body.style.right = '';
+        document.body.style.overflow = '';
+        window.scrollTo(0, scrollY);
+      };
     }
-    return () => { document.body.style.overflow = ''; };
   }, [open]);
 
   if (!open) return null;
