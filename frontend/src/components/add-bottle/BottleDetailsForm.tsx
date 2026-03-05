@@ -255,7 +255,7 @@ export default function BottleDetailsForm({
                       <span className="ml-1 text-[10px] text-amber-600 font-normal">from product</span>
                     )}
                   </label>
-                  <input type="number" step="0.1" min="0" value={overrides.proof} onChange={(e) => setField('proof', e.target.value)} placeholder="e.g., 90.0" className={inputClass} />
+                  <input type="number" step="any" min="0" value={overrides.proof} onChange={(e) => setField('proof', e.target.value)} placeholder="e.g., 90.0" className={inputClass} />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">
@@ -264,7 +264,7 @@ export default function BottleDetailsForm({
                       <span className="ml-1 text-[10px] text-amber-600 font-normal">from product</span>
                     )}
                   </label>
-                  <input type="number" step="0.1" min="0" max="100" value={overrides.abv} onChange={(e) => setField('abv', e.target.value)} placeholder="e.g., 45.0" className={inputClass} />
+                  <input type="number" step="any" min="0" max="100" value={overrides.abv} onChange={(e) => setField('abv', e.target.value)} placeholder="e.g., 45.0" className={inputClass} />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">
