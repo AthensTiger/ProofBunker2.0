@@ -13,6 +13,7 @@ import {
   upsertTastingNote,
   deleteTastingNote,
 } from '../controllers/productController';
+import { scanLabel, markLabelVerified, getLabelStatus } from '../controllers/labelScanController';
 import '../types';
 
 const router = Router();
@@ -25,6 +26,11 @@ router.get('/companies/autocomplete', autocompleteCompanies);
 router.get('/distillers/autocomplete', autocompleteDistillers);
 router.get('/upc/:upc', getProductByUpc);
 router.get('/:id', getProductById);
+
+// Label scanning (authenticated users)
+router.post('/scan-label', jwtCheck as any, ensureUserExists, scanLabel);
+router.get('/:id/label-status', getLabelStatus);
+router.put('/:id/label-verified', jwtCheck as any, ensureUserExists, markLabelVerified);
 
 // Protected product routes (admin/curator only)
 router.put('/:id', jwtCheck as any, ensureUserExists, requireRole('admin', 'curator'), updateProduct);

@@ -293,6 +293,26 @@ CREATE TABLE IF NOT EXISTS support_ticket_question_attachments (
 CREATE INDEX IF NOT EXISTS idx_ticket_q_attachments_question ON support_ticket_question_attachments(question_id);
 
 -- ================================================================
+-- Label Verification — Track which products have label-confirmed data
+-- ================================================================
+ALTER TABLE products ADD COLUMN IF NOT EXISTS label_verified BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS label_verified_at TIMESTAMPTZ;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS label_verification_count INTEGER NOT NULL DEFAULT 0;
+
+-- ================================================================
+-- System Settings — Admin-configurable key/value settings
+-- ================================================================
+CREATE TABLE IF NOT EXISTS system_settings (
+  key            VARCHAR(100) PRIMARY KEY,
+  value          JSONB NOT NULL DEFAULT 'null'::jsonb,
+  updated_at     TIMESTAMPTZ DEFAULT NOW()
+);
+
+INSERT INTO system_settings (key, value)
+VALUES ('require_label_verification', 'false'::jsonb)
+ON CONFLICT (key) DO NOTHING;
+
+-- ================================================================
 -- Product Corrections — AI-Powered Data Cleanup Staging
 -- Proposed corrections from AI research, staged for admin review.
 -- Nothing touches the products table until an admin approves.

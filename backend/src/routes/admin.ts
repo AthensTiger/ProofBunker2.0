@@ -30,6 +30,7 @@ import {
   setEmailVerified,
   updateUserFeatures,
 } from '../controllers/adminController';
+import { getSettings, updateSettings } from '../controllers/settingsController';
 import '../types';
 
 const router = Router();
@@ -67,6 +68,10 @@ router.get('/distillers/:id', getDistiller);
 router.put('/distillers/:id', updateDistiller);
 router.delete('/distillers/:id', deleteDistiller);
 router.post('/distillers/:id/merge', mergeDistiller);
+
+// System Settings
+router.get('/settings', getSettings);
+router.put('/settings', updateSettings);
 
 // Users (admin only — role check inside controller)
 router.get('/users', getAllUsers);
