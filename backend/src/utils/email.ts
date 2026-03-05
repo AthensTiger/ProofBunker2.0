@@ -1,11 +1,11 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM = 'Proof Bunker <onboarding@resend.dev>';
 const APP_URL = 'https://proofbunker.netlify.app';
 
 export async function sendTicketResolvedEmail(to: string, title: string): Promise<void> {
   if (!process.env.RESEND_API_KEY) return;
+  const resend = new Resend(process.env.RESEND_API_KEY);
   try {
     await resend.emails.send({
       from: FROM,
@@ -26,6 +26,7 @@ export async function sendTicketResolvedEmail(to: string, title: string): Promis
 
 export async function sendTicketAutoClosedEmail(to: string, title: string): Promise<void> {
   if (!process.env.RESEND_API_KEY) return;
+  const resend = new Resend(process.env.RESEND_API_KEY);
   try {
     await resend.emails.send({
       from: FROM,
@@ -45,6 +46,7 @@ export async function sendTicketAutoClosedEmail(to: string, title: string): Prom
 
 export async function sendTicketAdminClosedEmail(to: string, title: string): Promise<void> {
   if (!process.env.RESEND_API_KEY) return;
+  const resend = new Resend(process.env.RESEND_API_KEY);
   try {
     await resend.emails.send({
       from: FROM,

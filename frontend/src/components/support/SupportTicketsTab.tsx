@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAdminTickets, useUpdateTicketStatus } from '../../hooks/useSupport';
 import { useCurrentUser } from '../../hooks/useUser';
+import { useUIStore } from '../../stores/uiStore';
 import type { SupportTicket } from '../../types/support';
 
 const TYPE_LABELS: Record<string, string> = {
@@ -26,7 +27,9 @@ const STATUS_STYLES: Record<string, string> = {
 
 function TicketCard({ ticket, canEdit }: { ticket: SupportTicket; canEdit: boolean }) {
   const [expanded, setExpanded] = useState(false);
+  const [localStatus, setLocalStatus] = useState<string>(ticket.status);
   const updateMutation = useUpdateTicketStatus();
+  const addToast = useUIStore((s) => s.addToast);
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
@@ -75,9 +78,24 @@ function TicketCard({ ticket, canEdit }: { ticket: SupportTicket; canEdit: boole
             <div onClick={(e) => e.stopPropagation()}>
               <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Status</p>
               <select
-                value={ticket.status}
-                onChange={(e) => updateMutation.mutate({ id: ticket.id, status: e.target.value })}
-                className="text-sm px-3 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white"
+                value={localStatus}
+                disabled={updateMutation.isPending}
+                onChange={(e) => {
+                  const newStatus = e.target.value;
+                  setLocalStatus(newStatus);
+                  updateMutation.mutate(
+                    { id: ticket.id, status: newStatus },
+                    {
+                      onSuccess: () => addToast('success', 'Status updated'),
+                      onError: (err: unknown) => {
+                        setLocalStatus(ticket.status);
+                        const msg = err instanceof Error ? err.message : 'Failed to update status';
+                        addToast('error', msg);
+                      },
+                    }
+                  );
+                }}
+                className="text-sm px-3 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white disabled:opacity-60"
               >
                 <option value="open">Open</option>
                 <option value="in_progress">In Progress</option>
