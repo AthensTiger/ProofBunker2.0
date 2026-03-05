@@ -127,6 +127,8 @@ export async function approveCorrection(req: Request, res: Response, next: NextF
       maybeSet('barrel_type', corr.proposed_barrel_type);
       maybeSet('description', corr.proposed_description);
       maybeSet('msrp_usd', corr.proposed_msrp_usd);
+      maybeSet('producer_name', corr.proposed_producer_name);
+      maybeSet('parent_company', corr.proposed_parent_company);
 
       // Update slug if name changed
       if (corr.proposed_name) {
@@ -221,8 +223,8 @@ export async function partialApproveCorrection(req: Request, res: Response, next
     }
 
     const allowedFields = [
-      'name', 'company_name', 'distiller_name', 'proof', 'abv',
-      'age_statement', 'spirit_type', 'spirit_subtype',
+      'name', 'company_name', 'distiller_name', 'producer_name', 'parent_company',
+      'proof', 'abv', 'age_statement', 'spirit_type', 'spirit_subtype',
       'mash_bill', 'barrel_type', 'description', 'msrp_usd',
     ];
     const invalidFields = fields.filter((f: string) => !allowedFields.includes(f));
@@ -413,6 +415,8 @@ export async function bulkApproveCorrections(req: Request, res: Response, next: 
         maybeSet('barrel_type', corr.proposed_barrel_type);
         maybeSet('description', corr.proposed_description);
         maybeSet('msrp_usd', corr.proposed_msrp_usd);
+        maybeSet('producer_name', corr.proposed_producer_name);
+        maybeSet('parent_company', corr.proposed_parent_company);
 
         if (corr.proposed_name) {
           const slug = corr.proposed_name.trim().toLowerCase()

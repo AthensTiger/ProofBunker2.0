@@ -14,6 +14,8 @@ type StatusFilter = '' | 'pending' | 'approved' | 'rejected' | 'partial';
 const CORRECTABLE_FIELDS = [
   { key: 'name', label: 'Product Name' },
   { key: 'company_name', label: 'Company' },
+  { key: 'producer_name', label: 'Producer' },
+  { key: 'parent_company', label: 'Parent Company' },
   { key: 'distiller_name', label: 'Distiller' },
   { key: 'proof', label: 'Proof' },
   { key: 'abv', label: 'ABV' },
