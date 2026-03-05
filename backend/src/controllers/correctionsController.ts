@@ -28,6 +28,7 @@ export async function getCorrections(req: Request, res: Response, next: NextFunc
       confidence: 'pc.confidence',
       created_at: 'pc.created_at',
       product_name: 'pc.current_name',
+      status: 'pc.status',
     };
     const orderCol = allowedSorts[sort_by as string] || 'pc.confidence';
     const orderDir = sort_dir === 'asc' ? 'ASC' : 'DESC';

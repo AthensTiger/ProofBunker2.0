@@ -26,16 +26,20 @@ const CORRECTABLE_FIELDS = [
   { key: 'msrp_usd', label: 'MSRP' },
 ];
 
+type SortField = 'confidence' | 'product_name' | 'status' | 'created_at';
+
 export default function DataCleanupTab() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('pending');
+  const [sortBy, setSortBy] = useState<SortField>('confidence');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [page, setPage] = useState(0);
   const limit = 20;
 
   const { data: progressData } = useCleanupProgress();
   const { data, isLoading } = useCorrections({
     status: statusFilter || undefined,
-    sort_by: 'confidence',
-    sort_dir: 'desc',
+    sort_by: sortBy,
+    sort_dir: sortDir,
     limit,
     offset: page * limit,
   });
@@ -65,7 +69,7 @@ export default function DataCleanupTab() {
         </div>
       )}
 
-      {/* Filters & Bulk Actions */}
+      {/* Filters, Sort & Bulk Actions */}
       <div className="flex flex-wrap items-center gap-3">
         <select
           value={statusFilter}
@@ -77,6 +81,26 @@ export default function DataCleanupTab() {
           <option value="approved">Approved</option>
           <option value="rejected">Rejected</option>
           <option value="partial">Partial</option>
+        </select>
+
+        <select
+          value={`${sortBy}:${sortDir}`}
+          onChange={(e) => {
+            const [field, dir] = e.target.value.split(':') as [SortField, 'asc' | 'desc'];
+            setSortBy(field);
+            setSortDir(dir);
+            setPage(0);
+          }}
+          className="border border-gray-300 rounded-md px-3 py-1.5 text-sm"
+        >
+          <option value="confidence:desc">Confidence (high first)</option>
+          <option value="confidence:asc">Confidence (low first)</option>
+          <option value="product_name:asc">Name (A-Z)</option>
+          <option value="product_name:desc">Name (Z-A)</option>
+          <option value="status:asc">Status (A-Z)</option>
+          <option value="status:desc">Status (Z-A)</option>
+          <option value="created_at:desc">Newest first</option>
+          <option value="created_at:asc">Oldest first</option>
         </select>
 
         {statusFilter === 'pending' && stats?.pending > 0 && (
@@ -98,21 +122,9 @@ export default function DataCleanupTab() {
         </span>
       </div>
 
-      {/* Corrections List */}
-      {isLoading && <p className="text-gray-500 text-sm">Loading...</p>}
-      {!isLoading && corrections.length === 0 && (
-        <p className="text-gray-500 text-sm">No corrections found.</p>
-      )}
-
-      <div className="space-y-3">
-        {corrections.map((c: any) => (
-          <CorrectionCard key={c.id} correction={c} />
-        ))}
-      </div>
-
-      {/* Pagination */}
+      {/* Pagination — above list */}
       {total > limit && (
-        <div className="flex justify-center gap-2 pt-2">
+        <div className="flex justify-center gap-2">
           <button
             onClick={() => setPage(Math.max(0, page - 1))}
             disabled={page === 0}
@@ -132,6 +144,18 @@ export default function DataCleanupTab() {
           </button>
         </div>
       )}
+
+      {/* Corrections List */}
+      {isLoading && <p className="text-gray-500 text-sm">Loading...</p>}
+      {!isLoading && corrections.length === 0 && (
+        <p className="text-gray-500 text-sm">No corrections found.</p>
+      )}
+
+      <div className="space-y-3">
+        {corrections.map((c: any) => (
+          <CorrectionCard key={c.id} correction={c} />
+        ))}
+      </div>
     </div>
   );
 }
