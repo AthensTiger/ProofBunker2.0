@@ -273,15 +273,9 @@ export async function updateTicketStatus(req: Request, res: Response, next: Next
       return;
     }
 
+    // Core status update — always runs
     const result = await pool.query(
-      `UPDATE support_tickets SET
-        status = $1,
-        updated_at = NOW(),
-        resolved_at   = CASE WHEN $1 = 'resolved' THEN NOW() ELSE resolved_at END,
-        auto_close_at = CASE WHEN $1 = 'resolved' THEN NOW() + INTERVAL '7 days'
-                             WHEN $1 = 'closed'   THEN NULL
-                             ELSE auto_close_at END
-       WHERE id = $2 RETURNING *`,
+      `UPDATE support_tickets SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *`,
       [status, id]
     );
     if (result.rows.length === 0) {
@@ -290,10 +284,23 @@ export async function updateTicketStatus(req: Request, res: Response, next: Next
     }
     const ticket = result.rows[0];
 
-    if (status === 'resolved') {
-      sendTicketResolvedEmail(ticket.user_email, ticket.title);
-    } else if (status === 'closed') {
-      sendTicketAdminClosedEmail(ticket.user_email, ticket.title);
+    // Lifecycle timestamp update — best-effort (columns may not exist on older DBs)
+    try {
+      if (status === 'resolved') {
+        await pool.query(
+          `UPDATE support_tickets SET resolved_at = NOW(), auto_close_at = NOW() + INTERVAL '7 days' WHERE id = $1`,
+          [id]
+        );
+        sendTicketResolvedEmail(ticket.user_email, ticket.title);
+      } else if (status === 'closed') {
+        await pool.query(
+          `UPDATE support_tickets SET auto_close_at = NULL WHERE id = $1`,
+          [id]
+        );
+        sendTicketAdminClosedEmail(ticket.user_email, ticket.title);
+      }
+    } catch (lifecycleErr) {
+      console.warn('Lifecycle timestamp update skipped (columns may not exist yet):', (lifecycleErr as Error).message);
     }
 
     res.json(ticket);
