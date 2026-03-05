@@ -270,7 +270,7 @@ export default function BottleEditModal({ bottle, locations, onClose, onDelete, 
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">
-                  Age Statement{fromProductLabel(ageStatement, productContext?.age_statement)}
+                  Age Statement (Years){fromProductLabel(ageStatement, productContext?.age_statement)}
                 </label>
                 <div className="flex items-center gap-2">
                   <input type="text" value={isNas ? '' : ageStatement} onChange={(e) => setAgeStatement(e.target.value)} placeholder={isNas ? 'NAS' : 'e.g., 12'} disabled={isNas} className={`${inputClass} ${isNas ? 'bg-gray-100 text-gray-400' : ''}`} />
