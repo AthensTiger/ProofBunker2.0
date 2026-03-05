@@ -345,11 +345,11 @@ export default function SubmitNewProductForm({ initialUpc, locations, onSubmit, 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Proof <HelpTip text="Alcohol strength = ABV × 2. A 45% ABV spirit is 90 proof. Enter one and the other auto-calculates." /></label>
-              <input type="number" step="0.1" value={proof} onChange={(e) => setProof(e.target.value)} placeholder="e.g., 90" className={inputCls} />
+              <input type="number" step="any" value={proof} onChange={(e) => setProof(e.target.value)} placeholder="e.g., 90" className={inputCls} />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">ABV (%) <HelpTip text="Alcohol by volume as a percentage (e.g., 45.0 for a 45% spirit). Enter either Proof or ABV — the other will auto-fill." /></label>
-              <input type="number" step="0.001" value={abv} onChange={(e) => setAbv(e.target.value)} placeholder="e.g., 45.000" className={inputCls} />
+              <input type="number" step="any" value={abv} onChange={(e) => setAbv(e.target.value)} placeholder="e.g., 45.0" className={inputCls} />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Age Statement <HelpTip text='Years aged as stated on the label (e.g., "12 Years"). Leave blank for NAS (No Age Statement) products.' /></label>
