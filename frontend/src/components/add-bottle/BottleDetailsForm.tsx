@@ -209,17 +209,29 @@ export default function BottleDetailsForm({
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Purchase Price ($)</label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              placeholder="0.00"
-              className={inputClass}
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Purchase Price ($)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                placeholder="0.00"
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Bottle #</label>
+              <input
+                type="text"
+                value={overrides.bottle_number}
+                onChange={(e) => setField('bottle_number', e.target.value)}
+                placeholder="e.g., 245/500"
+                className={inputClass}
+              />
+            </div>
           </div>
 
           {/* Bottle-specific details */}
@@ -240,10 +252,6 @@ export default function BottleDetailsForm({
 
             {showDetails && (
               <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Bottle #</label>
-                  <input type="text" value={overrides.bottle_number} onChange={(e) => setField('bottle_number', e.target.value)} placeholder="e.g., 245/500" className={inputClass} />
-                </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Batch #</label>
                   <input type="text" value={overrides.batch_number} onChange={(e) => setField('batch_number', e.target.value)} placeholder="e.g., Batch 7" className={inputClass} />
