@@ -9,6 +9,15 @@ export function formatProof(value: number | null | undefined): string {
 }
 
 /**
+ * Format an ABV fraction (0.5415) as a display percentage string ("54.15%").
+ * Preserves up to 2 decimal places, strips trailing zeros.
+ */
+export function formatAbv(fraction: number | null | undefined): string {
+  if (fraction == null) return '';
+  return `${parseFloat((Number(fraction) * 100).toFixed(2))}%`;
+}
+
+/**
  * Parse an age statement string into a numeric value.
  * Strips suffixes like "Year", "Years", "Yr", "yr old", etc.
  * Returns null for NAS or unparseable values.

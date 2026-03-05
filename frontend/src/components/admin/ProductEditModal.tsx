@@ -288,7 +288,7 @@ export default function ProductEditModal({ productId, onClose, onSaved }: Produc
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Proof</label>
-                  <input type="number" step="0.1" value={proof} onChange={(e) => setProof(e.target.value)} className={inputCls} />
+                  <input type="number" step="any" value={proof} onChange={(e) => setProof(e.target.value)} className={inputCls} />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">ABV (%)</label>

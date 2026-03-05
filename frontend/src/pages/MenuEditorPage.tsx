@@ -405,7 +405,7 @@ export default function MenuEditorPage() {
                       <p className="text-xs text-gray-500 capitalize">
                         {item.company_name && `${item.company_name} · `}
                         {item.spirit_subtype || item.spirit_type}
-                        {item.abv != null && ` · ${parseFloat((Number(item.abv) * 100).toFixed(1))}%`}
+                        {item.abv != null && ` · ${parseFloat((Number(item.abv) * 100).toFixed(2))}%`}
                       </p>
                     </div>
                   </label>
