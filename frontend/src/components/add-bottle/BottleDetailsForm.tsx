@@ -273,7 +273,7 @@ export default function BottleDetailsForm({
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">
-                    Age Statement
+                    Age Statement (Years)
                     {productDetail?.age_statement && overrides.age_statement === productDetail.age_statement && (
                       <span className="ml-1 text-[10px] text-amber-600 font-normal">from product</span>
                     )}

@@ -295,7 +295,7 @@ export default function ProductEditModal({ productId, onClose, onSaved }: Produc
                   <input type="number" step="any" value={abv} onChange={(e) => setAbv(e.target.value)} className={inputCls} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Age Statement</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Age Statement (Years)</label>
                   <div className="flex items-center gap-2">
                     <input type="text" value={isNas ? '' : ageStatement} onChange={(e) => setAgeStatement(e.target.value)} placeholder={isNas ? 'NAS' : 'e.g., 12'} disabled={isNas} className={`${inputCls} ${isNas ? 'bg-gray-100 text-gray-400' : ''}`} />
                     <label className="flex items-center gap-1 text-xs text-gray-600 whitespace-nowrap cursor-pointer">
