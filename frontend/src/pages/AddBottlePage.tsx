@@ -73,6 +73,7 @@ export default function AddBottlePage() {
     storage_location_id?: number;
     status: string;
     purchase_price?: number;
+    bottle_number?: string | null;
     batch_number?: string | null;
     barrel_number?: string | null;
     year_distilled?: number | null;

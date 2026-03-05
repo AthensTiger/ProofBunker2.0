@@ -49,6 +49,7 @@ export default function SubmitNewProductForm({ initialUpc, locations, onSubmit, 
   const [distillationMethod, setDistillationMethod] = useState('');
   const [batchNumber, setBatchNumber] = useState('');
   const [barrelNumber, setBarrelNumber] = useState('');
+  const [bottleNumber, setBottleNumber] = useState('');
   const [showRelease, setShowRelease] = useState(false);
   const [vintageYear, setVintageYear] = useState('');
   const [releaseYear, setReleaseYear] = useState('');
@@ -157,6 +158,7 @@ export default function SubmitNewProductForm({ initialUpc, locations, onSubmit, 
     setDistillationMethod('');
     setBatchNumber('');
     setBarrelNumber('');
+    setBottleNumber('');
     setVintageYear('');
     setReleaseYear('');
     setIsLimitedEdition(false);
@@ -174,6 +176,7 @@ export default function SubmitNewProductForm({ initialUpc, locations, onSubmit, 
         storage_location_id: locationId,
         status,
         purchase_price: price ? parseFloat(price) : undefined,
+        bottle_number: bottleNumber.trim() || undefined,
       });
       return;
     }
@@ -204,6 +207,7 @@ export default function SubmitNewProductForm({ initialUpc, locations, onSubmit, 
       is_single_cask: isSingleCask || undefined,
       cask_strength: caskStrength || undefined,
       upc: upc.trim() || undefined,
+      bottle_number: bottleNumber.trim() || undefined,
       storage_location_id: locationId,
       status,
       purchase_price: price ? parseFloat(price) : undefined,
@@ -469,6 +473,10 @@ export default function SubmitNewProductForm({ initialUpc, locations, onSubmit, 
       <fieldset className="mb-5">
         <legend className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Bottle Details</legend>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Bottle #</label>
+            <input type="text" value={bottleNumber} onChange={(e) => setBottleNumber(e.target.value)} placeholder="e.g., 245/500" className={inputCls} />
+          </div>
           {!selectedProductId && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">UPC Barcode</label>

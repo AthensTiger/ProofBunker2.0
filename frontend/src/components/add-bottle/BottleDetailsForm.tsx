@@ -7,6 +7,7 @@ import { formatProof, normalizeAgeStatement } from '../../utils/format';
 import ResearchComparisonModal from '../ui/ResearchComparisonModal';
 
 interface OverrideFields {
+  bottle_number: string;
   batch_number: string;
   barrel_number: string;
   year_distilled: string;
@@ -18,7 +19,7 @@ interface OverrideFields {
 }
 
 const EMPTY_OVERRIDES: OverrideFields = {
-  batch_number: '', barrel_number: '', year_distilled: '', release_year: '',
+  bottle_number: '', batch_number: '', barrel_number: '', year_distilled: '', release_year: '',
   proof: '', abv: '', age_statement: '', mash_bill: '',
 };
 
@@ -28,6 +29,7 @@ interface BottleDetailsFormProps {
     storage_location_id?: number;
     status: string;
     purchase_price?: number;
+    bottle_number?: string | null;
     batch_number?: string | null;
     barrel_number?: string | null;
     year_distilled?: number | null;
@@ -98,6 +100,7 @@ export default function BottleDetailsForm({
       storage_location_id: locationId,
       status,
       purchase_price: price ? parseFloat(price) : undefined,
+      bottle_number:  toStr(overrides.bottle_number),
       batch_number:   toStr(overrides.batch_number),
       barrel_number:  toStr(overrides.barrel_number),
       year_distilled: toInt(overrides.year_distilled),
@@ -237,6 +240,10 @@ export default function BottleDetailsForm({
 
             {showDetails && (
               <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Bottle #</label>
+                  <input type="text" value={overrides.bottle_number} onChange={(e) => setField('bottle_number', e.target.value)} placeholder="e.g., 245/500" className={inputClass} />
+                </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Batch #</label>
                   <input type="text" value={overrides.batch_number} onChange={(e) => setField('batch_number', e.target.value)} placeholder="e.g., Batch 7" className={inputClass} />
