@@ -109,9 +109,9 @@ export async function submitProduct(req: Request, res: Response, next: NextFunct
 
       // Create a bottle
       const bottleResult = await client.query(
-        `INSERT INTO bunker_bottles (bunker_item_id, storage_location_id, status, purchase_price)
-         VALUES ($1, $2, $3, $4) RETURNING id`,
-        [itemResult.rows[0].id, storage_location_id || null, status || 'sealed', purchase_price || null]
+        `INSERT INTO bunker_bottles (bunker_item_id, storage_location_id, status, purchase_price, bottle_number)
+         VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+        [itemResult.rows[0].id, storage_location_id || null, status || 'sealed', purchase_price || null, req.body.bottle_number?.trim() || null]
       );
       const bottleId = bottleResult.rows[0].id;
 
