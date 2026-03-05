@@ -71,6 +71,7 @@ export interface BunkerBottle {
   override_mash_bill: string | null;
   override_release_year: number | null;
   // Override-only (no product counterpart)
+  bottle_number: string | null;
   batch_number: string | null;
   barrel_number: string | null;
   year_distilled: number | null;
@@ -114,6 +115,7 @@ export interface AddToBunkerRequest {
   storage_location_id?: number | null;
   status?: string;
   purchase_price?: number | null;
+  bottle_number?: string | null;
   batch_number?: string | null;
   barrel_number?: string | null;
   year_distilled?: number | null;

@@ -40,6 +40,7 @@ export default function BottleEditModal({ bottle, locations, onClose, onDelete, 
   const [status, setStatus] = useState<string>('sealed');
   const [price, setPrice] = useState('');
 
+  const [bottleNumber, setBottleNumber] = useState('');
   const [batchNumber, setBatchNumber] = useState('');
   const [barrelNumber, setBarrelNumber] = useState('');
   const [yearDistilled, setYearDistilled] = useState('');
@@ -69,6 +70,7 @@ export default function BottleEditModal({ bottle, locations, onClose, onDelete, 
       setStatus(bottle.status);
       setPrice(bottle.purchase_price != null ? String(bottle.purchase_price) : '');
 
+      setBottleNumber(bottle.bottle_number ?? '');
       setBatchNumber(bottle.batch_number ?? '');
       setBarrelNumber(bottle.barrel_number ?? '');
       setYearDistilled(bottle.year_distilled != null ? String(bottle.year_distilled) : '');
@@ -115,6 +117,7 @@ export default function BottleEditModal({ bottle, locations, onClose, onDelete, 
         storage_location_id: locationId ?? null,
         status,
         purchase_price: price ? parseFloat(price) : null,
+        bottle_number:  toStr(bottleNumber),
         batch_number:   toStr(batchNumber),
         barrel_number:  toStr(barrelNumber),
         year_distilled: toInt(yearDistilled),
@@ -225,6 +228,10 @@ export default function BottleEditModal({ bottle, locations, onClose, onDelete, 
           <div className="border-t border-gray-100 pt-4">
             <p className="text-sm font-medium text-gray-700 mb-3">Bottle Details</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Bottle #</label>
+                <input type="text" value={bottleNumber} onChange={(e) => setBottleNumber(e.target.value)} placeholder="e.g., 245/500" className={inputClass} />
+              </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">Batch #</label>
                 <input type="text" value={batchNumber} onChange={(e) => setBatchNumber(e.target.value)} placeholder="e.g., Batch 7" className={inputClass} />

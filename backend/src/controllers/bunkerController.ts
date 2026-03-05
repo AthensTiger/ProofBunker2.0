@@ -176,7 +176,7 @@ export async function getBunkerItem(req: Request, res: Response, next: NextFunct
               bb.id, bb.bunker_item_id, bb.storage_location_id, bb.status,
               bb.purchase_price, bb.created_at, bb.updated_at,
               -- raw bottle-level values (null = not set)
-              bb.batch_number, bb.barrel_number, bb.year_distilled,
+              bb.bottle_number, bb.batch_number, bb.barrel_number, bb.year_distilled,
               bb.proof         AS override_proof,
               bb.abv           AS override_abv,
               bb.age_statement AS override_age_statement,
@@ -249,6 +249,7 @@ export async function addToBunker(req: Request, res: Response, next: NextFunctio
 
       // Extract per-bottle detail fields
       const BOTTLE_DETAIL_FIELDS: { key: string; numeric?: boolean }[] = [
+        { key: 'bottle_number' },
         { key: 'batch_number' },
         { key: 'barrel_number' },
         { key: 'year_distilled', numeric: true },
@@ -269,9 +270,9 @@ export async function addToBunker(req: Request, res: Response, next: NextFunctio
       const bottleResult = await client.query(
         `INSERT INTO bunker_bottles
            (bunker_item_id, storage_location_id, status, purchase_price,
-            batch_number, barrel_number, year_distilled, release_year,
+            bottle_number, batch_number, barrel_number, year_distilled, release_year,
             proof, abv, age_statement, mash_bill)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
          RETURNING *`,
         [bunkerItemId, storage_location_id || null, status || 'sealed', purchase_price || null,
          ...detailValues]
@@ -372,6 +373,7 @@ export async function updateBottle(req: Request, res: Response, next: NextFuncti
       { key: 'storage_location_id', col: 'storage_location_id', numeric: true },
       { key: 'status',              col: 'status' },
       { key: 'purchase_price',      col: 'purchase_price',      numeric: true },
+      { key: 'bottle_number',       col: 'bottle_number' },
       { key: 'batch_number',        col: 'batch_number' },
       { key: 'barrel_number',       col: 'barrel_number' },
       { key: 'year_distilled',      col: 'year_distilled',      numeric: true },

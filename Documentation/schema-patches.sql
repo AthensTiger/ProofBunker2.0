@@ -196,6 +196,7 @@ ALTER TABLE bunker_bottles ADD COLUMN IF NOT EXISTS proof          DOUBLE PRECIS
 ALTER TABLE bunker_bottles ADD COLUMN IF NOT EXISTS abv            DECIMAL(5,4);
 ALTER TABLE bunker_bottles ADD COLUMN IF NOT EXISTS age_statement  VARCHAR(100);
 ALTER TABLE bunker_bottles ADD COLUMN IF NOT EXISTS mash_bill      VARCHAR(500);
+ALTER TABLE bunker_bottles ADD COLUMN IF NOT EXISTS bottle_number  VARCHAR(100);
 
 -- ================================================================
 -- Unresolved Bottle Scans — Deferred Barcode Resolution
