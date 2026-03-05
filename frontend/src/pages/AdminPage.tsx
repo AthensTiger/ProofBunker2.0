@@ -22,13 +22,15 @@ import AllUsersTab from '../components/admin/AllUsersTab';
 import SupportTicketsTab from '../components/support/SupportTicketsTab';
 import PostsApprovalTab from '../components/admin/PostsApprovalTab';
 import ReleaseNotesTab from '../components/admin/ReleaseNotesTab';
+import DataCleanupTab from '../components/admin/DataCleanupTab';
 import type { CompanyAutocompleteResult, DistillerAutocompleteResult } from '../types/product';
 
-type Tab = 'pending-products' | 'all-products' | 'unverified-companies' | 'all-companies' | 'unverified-distillers' | 'all-distillers' | 'users' | 'support-tickets' | 'posts-approval' | 'release-notes';
+type Tab = 'pending-products' | 'all-products' | 'data-cleanup' | 'unverified-companies' | 'all-companies' | 'unverified-distillers' | 'all-distillers' | 'users' | 'support-tickets' | 'posts-approval' | 'release-notes';
 
 const TABS: [Tab, string][] = [
   ['pending-products', 'Pending Products'],
   ['all-products', 'All Products'],
+  ['data-cleanup', 'Data Cleanup'],
   ['unverified-companies', 'Unverified Companies'],
   ['all-companies', 'All Companies'],
   ['unverified-distillers', 'Unverified Distillers'],
@@ -72,6 +74,7 @@ export default function AdminPage() {
 
       {tab === 'pending-products' && <PendingProductsTab />}
       {tab === 'all-products' && <AllProductsTab />}
+      {tab === 'data-cleanup' && <DataCleanupTab />}
       {tab === 'unverified-companies' && <UnverifiedCompaniesTab />}
       {tab === 'all-companies' && <AllCompaniesTab />}
       {tab === 'unverified-distillers' && <UnverifiedDistillersTab />}

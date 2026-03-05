@@ -311,3 +311,79 @@ export function useUpdateUserFeatures() {
     },
   });
 }
+
+// ── Product Corrections ──────────────────────────────
+
+export function useCorrections(filters: { status?: string; min_confidence?: number; sort_by?: string; sort_dir?: string; limit?: number; offset?: number }) {
+  const api = useApiClient();
+  const params = new URLSearchParams();
+  if (filters.status) params.set('status', filters.status);
+  if (filters.min_confidence != null) params.set('min_confidence', String(filters.min_confidence));
+  if (filters.sort_by) params.set('sort_by', filters.sort_by);
+  if (filters.sort_dir) params.set('sort_dir', filters.sort_dir);
+  if (filters.limit) params.set('limit', String(filters.limit));
+  if (filters.offset) params.set('offset', String(filters.offset));
+
+  return useQuery({
+    queryKey: ['admin', 'corrections', filters],
+    queryFn: () => api.get<{ corrections: any[]; total: number }>(`/corrections?${params}`),
+  });
+}
+
+export function useCleanupProgress() {
+  const api = useApiClient();
+  return useQuery({
+    queryKey: ['admin', 'cleanup-progress'],
+    queryFn: () => api.get<{ progress: any; stats: any }>('/corrections/progress'),
+  });
+}
+
+export function useApproveCorrection() {
+  const api = useApiClient();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => api.put(`/corrections/${id}/approve`, {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'corrections'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'cleanup-progress'] });
+    },
+  });
+}
+
+export function usePartialApproveCorrection() {
+  const api = useApiClient();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, fields }: { id: number; fields: string[] }) =>
+      api.put(`/corrections/${id}/partial-approve`, { fields }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'corrections'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'cleanup-progress'] });
+    },
+  });
+}
+
+export function useRejectCorrection() {
+  const api = useApiClient();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => api.put(`/corrections/${id}/reject`, {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'corrections'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'cleanup-progress'] });
+    },
+  });
+}
+
+export function useBulkApproveCorrections() {
+  const api = useApiClient();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (params: { ids?: number[]; min_confidence?: number }) =>
+      api.post<{ approved: number; errors: number; total: number }>('/corrections/bulk-approve', params),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'corrections'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'cleanup-progress'] });
+    },
+  });
+}
