@@ -64,6 +64,34 @@ export async function sendTicketAdminClosedEmail(to: string, title: string): Pro
   }
 }
 
+export async function sendTicketQuestionEmail(
+  to: string,
+  title: string,
+  question: string,
+  ticketId: number
+): Promise<void> {
+  if (!process.env.RESEND_API_KEY) return;
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  try {
+    await resend.emails.send({
+      from: FROM,
+      to,
+      subject: `Question about your support ticket: "${title}"`,
+      html: `
+        <p>Hi,</p>
+        <p>Our support team has a question about your ticket <strong>"${escapeHtml(title)}"</strong>:</p>
+        <blockquote style="border-left:3px solid #92400e;padding-left:12px;margin:16px 0;color:#374151;">
+          ${escapeHtml(question)}
+        </blockquote>
+        <p>Please <a href="${APP_URL}/support?ticket=${ticketId}">visit your ticket</a> to reply.</p>
+        <p>— The Proof Bunker Team</p>
+      `,
+    });
+  } catch (err) {
+    console.error('sendTicketQuestionEmail failed:', err);
+  }
+}
+
 function escapeHtml(str: string): string {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }

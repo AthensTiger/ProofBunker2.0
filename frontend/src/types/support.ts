@@ -5,6 +5,26 @@ export interface ChatMessage {
   created_at: string;
 }
 
+export interface TicketAttachment {
+  id: number;
+  ticket_id: number;
+  cdn_url: string;
+  filename: string;
+  file_size: number | null;
+  created_at: string;
+}
+
+export interface TicketQuestion {
+  id: number;
+  ticket_id: number;
+  admin_id: number;
+  admin_email: string;
+  question: string;
+  question_sent_at: string;
+  response: string | null;
+  response_received_at: string | null;
+}
+
 export interface SupportTicket {
   id: number;
   user_id: number;
@@ -20,6 +40,7 @@ export interface SupportTicket {
   reopened_at: string | null;
   created_at: string;
   updated_at: string;
+  attachments: TicketAttachment[];
 }
 
 export interface TicketNote {

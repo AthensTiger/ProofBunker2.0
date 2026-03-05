@@ -241,3 +241,36 @@ CREATE TABLE IF NOT EXISTS support_ticket_notes (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_ticket_notes_ticket ON support_ticket_notes(ticket_id);
+
+-- ================================================================
+-- Support Ticket Q&A — Admin questions to ticket submitters
+-- Admin asks a question via email; user responds inline on the
+-- Support page. question_sent_at / response_received_at timestamp
+-- each side of the exchange.
+-- ================================================================
+CREATE TABLE IF NOT EXISTS support_ticket_questions (
+  id                   SERIAL PRIMARY KEY,
+  ticket_id            INTEGER NOT NULL REFERENCES support_tickets(id) ON DELETE CASCADE,
+  admin_id             INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  admin_email          VARCHAR(255) NOT NULL,
+  question             TEXT NOT NULL,
+  question_sent_at     TIMESTAMPTZ DEFAULT NOW(),
+  response             TEXT,
+  response_received_at TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS idx_ticket_questions_ticket ON support_ticket_questions(ticket_id);
+
+-- ================================================================
+-- Support Ticket Attachments — Screenshots / files on submission
+-- Files stored in R2 under support/tickets/{userId}/{ticketId}/
+-- ================================================================
+CREATE TABLE IF NOT EXISTS support_ticket_attachments (
+  id          SERIAL PRIMARY KEY,
+  ticket_id   INTEGER NOT NULL REFERENCES support_tickets(id) ON DELETE CASCADE,
+  cdn_url     VARCHAR(1000) NOT NULL,
+  storage_key VARCHAR(500) NOT NULL,
+  filename    VARCHAR(255) NOT NULL,
+  file_size   INTEGER,
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_ticket_attachments_ticket ON support_ticket_attachments(ticket_id);

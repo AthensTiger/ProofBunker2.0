@@ -1,7 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
+import { PutObjectCommand } from '@aws-sdk/client-s3';
 import pool from '../config/database';
+import r2Client, { R2_BUCKET, R2_PUBLIC_URL } from '../config/r2';
 import { ANTHROPIC_API_KEY, ANTHROPIC_API_URL } from '../config/research';
-import { sendTicketResolvedEmail, sendTicketAdminClosedEmail } from '../utils/email';
+import { sendTicketResolvedEmail, sendTicketAdminClosedEmail, sendTicketQuestionEmail } from '../utils/email';
 
 // Rate limiter for chat (20 per minute per user)
 const chatRateLimitMap = new Map<number, number[]>();
@@ -229,18 +231,53 @@ export async function createTicket(req: Request, res: Response, next: NextFuncti
       [userId, userEmail, title.trim(), description.trim(), ticketType, claudeAnalysis, claudeSuggestedFix]
     );
 
-    res.status(201).json(result.rows[0]);
+    const ticket = result.rows[0];
+
+    // Upload any attached files to R2
+    const files = req.files as Express.Multer.File[] | undefined;
+    if (files && files.length > 0) {
+      for (const file of files) {
+        const ext = (file.originalname.split('.').pop() || 'jpg').toLowerCase();
+        const storageKey = `support/tickets/${userId}/${ticket.id}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+        await r2Client.send(new PutObjectCommand({
+          Bucket: R2_BUCKET,
+          Key: storageKey,
+          Body: file.buffer,
+          ContentType: file.mimetype,
+          CacheControl: 'public, max-age=31536000',
+        }));
+        const cdnUrl = `${R2_PUBLIC_URL}/${storageKey}`;
+        await pool.query(
+          `INSERT INTO support_ticket_attachments (ticket_id, cdn_url, storage_key, filename, file_size)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [ticket.id, cdnUrl, storageKey, file.originalname, file.size]
+        );
+      }
+    }
+
+    res.status(201).json({ ...ticket, attachments: [] });
   } catch (err) {
     next(err);
   }
 }
+
+const ATTACHMENTS_SUBQUERY = `
+  COALESCE(
+    (SELECT json_agg(a ORDER BY a.created_at)
+     FROM support_ticket_attachments a
+     WHERE a.ticket_id = t.id),
+    '[]'
+  ) AS attachments`;
 
 // GET /support/tickets (user's own)
 export async function getMyTickets(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const userId = req.user!.id;
     const result = await pool.query(
-      `SELECT * FROM support_tickets WHERE user_id = $1 ORDER BY created_at DESC`,
+      `SELECT t.*, ${ATTACHMENTS_SUBQUERY}
+       FROM support_tickets t
+       WHERE t.user_id = $1
+       ORDER BY t.created_at DESC`,
       [userId]
     );
     res.json(result.rows);
@@ -253,7 +290,10 @@ export async function getMyTickets(req: Request, res: Response, next: NextFuncti
 export async function getAdminTickets(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const result = await pool.query(
-      `SELECT * FROM support_tickets ORDER BY created_at DESC LIMIT 200`
+      `SELECT t.*, ${ATTACHMENTS_SUBQUERY}
+       FROM support_tickets t
+       ORDER BY t.created_at DESC
+       LIMIT 200`
     );
     res.json(result.rows);
   } catch (err) {
@@ -378,6 +418,116 @@ export async function getTicketNotes(req: Request, res: Response, next: NextFunc
       [id]
     );
     res.json(result.rows);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// GET /support/tickets/:id/questions (user or admin: list Q&A for a ticket)
+export async function getTicketQuestions(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const userId = req.user!.id;
+    const userRole = (req.user as any).role as string;
+    const { id } = req.params;
+
+    // Non-admins must own the ticket
+    if (userRole !== 'admin' && userRole !== 'curator') {
+      const check = await pool.query(
+        `SELECT id FROM support_tickets WHERE id = $1 AND user_id = $2`,
+        [id, userId]
+      );
+      if (check.rows.length === 0) {
+        res.status(404).json({ error: 'Ticket not found' });
+        return;
+      }
+    }
+
+    const result = await pool.query(
+      `SELECT * FROM support_ticket_questions WHERE ticket_id = $1 ORDER BY question_sent_at ASC`,
+      [id]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// POST /support/admin/tickets/:id/questions (admin: ask user a question)
+export async function askTicketQuestion(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const adminId = req.user!.id;
+    const adminEmail = req.user!.email || 'admin';
+    const { id } = req.params;
+    const { question } = req.body;
+
+    if (!question?.trim()) {
+      res.status(400).json({ error: 'question is required' });
+      return;
+    }
+
+    // Verify ticket exists
+    const ticketCheck = await pool.query(
+      `SELECT user_email, title FROM support_tickets WHERE id = $1`,
+      [id]
+    );
+    if (ticketCheck.rows.length === 0) {
+      res.status(404).json({ error: 'Ticket not found' });
+      return;
+    }
+    const { user_email, title } = ticketCheck.rows[0];
+
+    const result = await pool.query(
+      `INSERT INTO support_ticket_questions (ticket_id, admin_id, admin_email, question)
+       VALUES ($1, $2, $3, $4)
+       RETURNING *`,
+      [id, adminId, adminEmail, question.trim()]
+    );
+
+    // Fire-and-forget email to the user
+    sendTicketQuestionEmail(user_email, title, question.trim(), Number(id));
+
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// POST /support/tickets/:id/questions/:qid/respond (user: respond to a question)
+export async function respondToQuestion(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const userId = req.user!.id;
+    const { id, qid } = req.params;
+    const { response } = req.body;
+
+    if (!response?.trim()) {
+      res.status(400).json({ error: 'response is required' });
+      return;
+    }
+
+    // Verify ticket ownership
+    const ticketCheck = await pool.query(
+      `SELECT id FROM support_tickets WHERE id = $1 AND user_id = $2`,
+      [id, userId]
+    );
+    if (ticketCheck.rows.length === 0) {
+      res.status(404).json({ error: 'Ticket not found' });
+      return;
+    }
+
+    // Update the question with the response
+    const result = await pool.query(
+      `UPDATE support_ticket_questions
+       SET response = $1, response_received_at = NOW()
+       WHERE id = $2 AND ticket_id = $3 AND response IS NULL
+       RETURNING *`,
+      [response.trim(), qid, id]
+    );
+    if (result.rows.length === 0) {
+      res.status(404).json({ error: 'Question not found or already answered' });
+      return;
+    }
+
+    res.json(result.rows[0]);
   } catch (err) {
     next(err);
   }

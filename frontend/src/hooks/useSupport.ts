@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiClient } from '../api/client';
-import type { ChatMessage, SupportTicket, TicketNote } from '../types/support';
+import type { ChatMessage, SupportTicket, TicketNote, TicketQuestion } from '../types/support';
 
 export function useChatHistory() {
   const api = useApiClient();
@@ -37,8 +37,8 @@ export function useCreateTicket() {
   const api = useApiClient();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (body: { title: string; description: string }) =>
-      api.post<SupportTicket>('/support/tickets', body),
+    mutationFn: (formData: FormData) =>
+      api.postFormData<SupportTicket>('/support/tickets', formData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['support', 'tickets'] });
     },
@@ -91,5 +91,38 @@ export function useTicketNotes(ticketId: number | null) {
     queryKey: ['support', 'tickets', ticketId, 'notes'],
     queryFn: () => api.get<TicketNote[]>(`/support/tickets/${ticketId}/notes`),
     enabled: ticketId != null,
+  });
+}
+
+export function useTicketQuestions(ticketId: number | null) {
+  const api = useApiClient();
+  return useQuery({
+    queryKey: ['support', 'tickets', ticketId, 'questions'],
+    queryFn: () => api.get<TicketQuestion[]>(`/support/tickets/${ticketId}/questions`),
+    enabled: ticketId != null,
+  });
+}
+
+export function useAskQuestion() {
+  const api = useApiClient();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, question }: { id: number; question: string }) =>
+      api.post<TicketQuestion>(`/support/admin/tickets/${id}/questions`, { question }),
+    onSuccess: (_data, vars) => {
+      queryClient.invalidateQueries({ queryKey: ['support', 'tickets', vars.id, 'questions'] });
+    },
+  });
+}
+
+export function useRespondToQuestion() {
+  const api = useApiClient();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, qid, response }: { id: number; qid: number; response: string }) =>
+      api.post<TicketQuestion>(`/support/tickets/${id}/questions/${qid}/respond`, { response }),
+    onSuccess: (_data, vars) => {
+      queryClient.invalidateQueries({ queryKey: ['support', 'tickets', vars.id, 'questions'] });
+    },
   });
 }
