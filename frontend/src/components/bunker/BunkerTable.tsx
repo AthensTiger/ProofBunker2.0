@@ -4,7 +4,7 @@ import { Virtuoso } from 'react-virtuoso';
 import type { BunkerListItem, BunkerCardFields } from '../../types/bunker';
 import StarRatingInput from '../ui/StarRatingInput';
 import Badge from '../ui/Badge';
-import { formatProof } from '../../utils/format';
+import { formatProof, formatAbv, formatAgeStatement } from '../../utils/format';
 
 interface BunkerTableProps {
   items: BunkerListItem[];
@@ -21,8 +21,8 @@ function buildDetailSummary(item: BunkerListItem): string {
   if (item.barrel_number) parts.push(`Barrel: ${item.barrel_number}`);
   if (item.year_distilled != null) parts.push(`Dist. ${item.year_distilled}`);
   if (item.proof != null) parts.push(`${formatProof(item.proof)}pf`);
-  else if (item.abv != null) parts.push(`${parseFloat((Number(item.abv) * 100).toFixed(1))}% ABV`);
-  if (item.age_statement) parts.push(item.age_statement);
+  else if (item.abv != null) parts.push(`${formatAbv(item.abv)} ABV`);
+  if (item.age_statement) parts.push(formatAgeStatement(item.age_statement));
   if (item.release_year != null) parts.push(`Rel. ${item.release_year}`);
   return parts.join(' · ');
 }
@@ -73,7 +73,7 @@ function BunkerCard({
     else if (item.spirit_type) metaParts.push(item.spirit_type);
   }
   if (cardFields.show_abv && item.abv != null) {
-    metaParts.push(`${parseFloat((Number(item.abv) * 100).toFixed(1))}%`);
+    metaParts.push(formatAbv(item.abv));
   }
   if (cardFields.show_location && item.location_names.length > 0) {
     metaParts.push(item.location_names.join(', '));

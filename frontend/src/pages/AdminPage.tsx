@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useCurrentUser } from '../hooks/useUser';
-import { formatProof } from '../utils/format';
+import { formatProof, formatAbv, formatAgeStatement } from '../utils/format';
 import {
   usePendingProducts,
   useApproveProduct,
@@ -151,8 +151,8 @@ function PendingProductsTab() {
             <div className="mt-3 pt-3 border-t border-gray-100 grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2 text-sm">
               <Field label="Distiller" value={p.distiller_name} />
               <Field label="Proof" value={p.proof != null ? formatProof(p.proof) : null} />
-              <Field label="ABV" value={p.abv ? `${parseFloat((Number(p.abv) * 100).toFixed(1))}%` : null} />
-              <Field label="Age" value={p.age_statement} />
+              <Field label="ABV" value={p.abv ? formatAbv(p.abv) : null} />
+              <Field label="Age" value={p.age_statement ? formatAgeStatement(p.age_statement) : null} />
               <Field label="Volume" value={p.volume_ml ? `${p.volume_ml}ml` : null} />
               <Field label="MSRP" value={p.msrp_usd ? `$${p.msrp_usd}` : null} />
               <Field label="Mash Bill" value={p.mash_bill} />

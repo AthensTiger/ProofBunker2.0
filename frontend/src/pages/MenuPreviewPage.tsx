@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useMenuPreview } from '../hooks/useMenus';
 import StarRating from '../components/ui/StarRating';
 import { exportElementToPdf } from '../utils/exportPdf';
-import { formatProof } from '../utils/format';
+import { formatProof, formatAbv } from '../utils/format';
 import { useUIStore } from '../stores/uiStore';
 
 export default function MenuPreviewPage() {
@@ -122,7 +122,7 @@ export default function MenuPreviewPage() {
 
         {/* ABV */}
         {settings.show_abv && item.abv != null && (
-          <p className="mt-0.5 text-gray-400">ABV: {parseFloat((Number(item.abv) * 100).toFixed(1))}%</p>
+          <p className="mt-0.5 text-gray-400">ABV: {formatAbv(item.abv)}</p>
         )}
 
         {/* Proof */}

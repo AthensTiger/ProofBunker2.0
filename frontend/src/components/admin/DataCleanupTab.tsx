@@ -7,7 +7,7 @@ import {
   usePartialApproveCorrection,
   useBulkApproveCorrections,
 } from '../../hooks/useAdmin';
-import { formatProof } from '../../utils/format';
+import { formatProof, formatAbv } from '../../utils/format';
 
 type StatusFilter = '' | 'pending' | 'approved' | 'rejected' | 'partial';
 
@@ -308,7 +308,7 @@ function CorrectionCard({ correction: c }: { correction: any }) {
 function formatFieldValue(key: string, value: unknown): string {
   if (value === null || value === undefined) return '';
   if (key === 'proof') return formatProof(Number(value));
-  if (key === 'abv') return `${(Number(value) * 100).toFixed(1)}%`;
+  if (key === 'abv') return formatAbv(Number(value));
   if (key === 'msrp_usd') return `$${Number(value).toFixed(2)}`;
   return String(value);
 }
